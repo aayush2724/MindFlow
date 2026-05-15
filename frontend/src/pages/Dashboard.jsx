@@ -1,203 +1,256 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, TrendingDown, ArrowRight, Moon, BookOpen, Zap, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import StressOrb from '../components/StressOrb';
-import BurnoutGauge from '../components/BurnoutGauge';
-import GlassCard from '../components/GlassCard';
-import { generateMockHistory, calculateBurnoutScore } from '../lib/burnoutEngine';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] } }),
-};
+import Sidebar from '../components/Sidebar';
+import { fetchLastCheckin, fetchHistory } from '../lib/firestore';
+import { calculateBurnoutScore } from '../lib/burnoutEngine';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [burnout, setBurnout] = useState(null);
   const [history, setHistory] = useState([]);
-  const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    const h = new Date().getHours();
-    setGreeting(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening');
+    async function load() {
+      try {
+        const [last, hist] = await Promise.all([
+          fetchLastCheckin(user?.uid || 'demo'),
+          fetchHistory(user?.uid || 'demo', 7),
+        ]);
+        const input = last || { mood:6, sleep:6.5, workload:5, stress:4 };
+        setBurnout(calculateBurnoutScore(input));
+        setHistory(hist);
+      } catch {
+        setBurnout(calculateBurnoutScore({ mood:7, sleep:7, workload:4, stress:3 }));
+      }
+    }
+    load();
+  }, [user]);
 
-    const lastCheckin = JSON.parse(localStorage.getItem('mf_last_checkin') || 'null');
-    const result = lastCheckin
-      ? calculateBurnoutScore(lastCheckin)
-      : calculateBurnoutScore({ mood: 6, sleep: 6.5, workload: 6, stress: 6 });
-    setBurnout(result);
-    setHistory(generateMockHistory(result.score));
-  }, []);
+  const score = burnout?.score ?? 12;
+  const label = score < 30 ? 'Zen' : score < 60 ? 'Aware' : 'Strained';
+  const sublabel = score < 30 ? 'OPTIMAL FLOW STATE' : score < 60 ? 'MONITOR CLOSELY' : 'TAKE A BREAK';
 
-  if (!burnout) return null;
-
-  const trend = history.length >= 2
-    ? history[history.length - 1].score - history[history.length - 2].score
-    : 0;
-
-  const quickStats = [
-    { icon: Moon, label: 'Sleep last night', value: '6.5h', color: '#38bdf8', note: '1.5h below goal' },
-    { icon: BookOpen, label: 'Active subjects', value: '5', color: '#a78bfa', note: '2 deadlines this week' },
-    { icon: Zap, label: 'Burnout streak', value: '3d', color: '#fbbf24', note: 'Above 60 for 3 days' },
-  ];
+  // Build 7-day chart data from history
+  const days = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const chartHeights = history.length >= 7
+    ? history.slice(-7).map(h => Math.max(10, Math.min(90, h.score || 30)))
+    : [22,35,12,88,80,55,40];
 
   return (
-    <div className="page-wrapper noise bg-grid" style={{ paddingTop: 88, paddingBottom: 60 }}>
-      <div className="ambient-orb" style={{ width: 500, height: 500, background: `radial-gradient(circle, ${burnout.color}55, transparent)`, top: 0, right: -100, opacity: 0.15 }} />
+    <div style={{ background:'#050506', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
+      {/* Space background */}
+      <div className="space-bg">
+        <div className="starfield-db" />
+        <div className="starfield-db starfield-db-2" />
+        <div className="accretion-disk-db-back" style={{ zIndex:1 }} />
+        <div className="photon-ring-db-outer" style={{ zIndex:3 }} />
+        <div className="photon-ring-db" style={{ zIndex:4 }} />
+        <div className="black-hole-center-db" style={{ zIndex:5 }} />
+        <div className="accretion-disk-db" style={{ zIndex:2 }} />
+        <div className="ambient-glow-db" style={{ zIndex:6 }} />
+      </div>
 
-      <div className="container">
-        {/* Header */}
-        <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" style={{ marginBottom: 40 }}>
-          <div className="label" style={{ marginBottom: 8 }}>{greeting}</div>
-          <h1 className="heading-lg" style={{ marginBottom: 4 }}>
-            {user?.displayName?.split(' ')[0] || 'Student'} 👋
-          </h1>
-          <p className="body-md">Here's your wellbeing snapshot for today.</p>
-        </motion.div>
+      <Sidebar active="dashboard" />
 
-        {/* Hero row: Orb + Gauge + Advice */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-          {/* Orb card */}
-          <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible">
-            <GlassCard hover={false} glow style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              padding: '40px 28px', minHeight: 340,
-              background: 'linear-gradient(135deg, rgba(108,99,255,0.06), rgba(56,189,248,0.04))',
-            }}>
-              <div style={{ position: 'relative', marginBottom: 24 }}>
-                <div className="pulse-ring" style={{ position: 'absolute', inset: -20, borderRadius: '50%', border: `2px solid ${burnout.color}40` }} />
-                <StressOrb score={burnout.score} size={200} />
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 4, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Emotional State
-                </div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, color: burnout.color }}>
-                  {burnout.level}
-                </div>
-              </div>
-            </GlassCard>
-          </motion.div>
+      {/* Top Header */}
+      <header className="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-6 py-4 header-integrated">
+        <div className="flex items-center gap-4">
+          <span className="font-bold tracking-tighter text-[#e1fdff]/80" style={{ fontFamily:'Space Grotesk', fontSize:20 }}>SYSTEM_OS_v4.2</span>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border ml-4" style={{ background:'rgba(210,255,0,0.1)', borderColor:'rgba(210,255,0,0.3)' }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-[#D2FF00] animate-pulse" />
+            <span className="text-[9px] terminal-text font-bold tracking-widest" style={{ color:'#D2FF00' }}>SYNC_PROTOCOL: ACTIVE</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center px-4 py-2 rounded-lg border" style={{ background:'rgba(255,255,255,0.05)', borderColor:'rgba(255,255,255,0.1)' }}>
+            <span className="material-symbols-outlined text-sm mr-2" style={{ color:'#b9cacb' }}>search</span>
+            <input className="bg-transparent border-none outline-none text-xs w-48 placeholder:opacity-40" style={{ color:'#e5e2e3' }} placeholder="SEARCH NEURAL NET..." />
+          </div>
+          <button><span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span></button>
+          <div className="w-10 h-10 rounded-lg border overflow-hidden" style={{ borderColor:'rgba(210,255,0,0.3)' }}>
+            <div className="w-full h-full rounded-lg flex items-center justify-center font-bold text-sm" style={{ background:'rgba(0,219,231,0.2)', color:'#e1fdff' }}>
+              {(user?.displayName || 'A')[0].toUpperCase()}
+            </div>
+          </div>
+        </div>
+      </header>
 
-          {/* Gauge + advice */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
-              <GlassCard hover={false} style={{ padding: '28px 28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <BurnoutGauge score={burnout.score} size={220} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                  {trend > 0
-                    ? <TrendingUp size={16} color="#f87171" />
-                    : <TrendingDown size={16} color="#34d399" />}
-                  <span style={{ fontSize: 13, color: trend > 0 ? '#f87171' : '#34d399' }}>
-                    {Math.abs(trend)} pts {trend > 0 ? 'higher' : 'lower'} than yesterday
-                  </span>
+      {/* Main */}
+      <main className="pt-24 pb-0 px-6 md:ml-64 min-h-screen relative">
+        <div className="max-w-7xl mx-auto">
+          {/* Hero Bento */}
+          <div className="pb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
+              {/* MoodMap Orb */}
+              <div className="lg:col-span-8 glass-panel rounded-[2rem] p-10 flex flex-col items-center justify-center relative overflow-hidden min-h-[550px] hud-border">
+                <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center">
+                  <div className="w-4/5 h-4/5 rounded-full border border-[#e1fdff]/20 animate-spin" style={{ animationDuration:'20s' }} />
+                  <div className="absolute w-3/5 h-3/5 rounded-full border border-[#D2FF00]/10 animate-spin" style={{ animationDuration:'15s', animationDirection:'reverse' }} />
                 </div>
-              </GlassCard>
-            </motion.div>
-
-            <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible">
-              <GlassCard hover={false} style={{ padding: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <AlertTriangle size={15} color={burnout.color} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: burnout.color }}>Today's Advice</span>
+                <div className="text-center z-10 mb-8">
+                  <h2 className="font-bold tracking-widest uppercase mb-1" style={{ fontFamily:'Space Grotesk', fontSize:24, color:'#e1fdff' }}>MoodMap Core</h2>
+                  <p className="text-[9px] terminal-text tracking-[0.3em] animate-pulse mb-4" style={{ color:'#D2FF00' }}>NEURAL ENGINE PROCESSING</p>
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="h-px w-12" style={{ background:'rgba(210,255,0,0.4)' }} />
+                    <p className="terminal-text text-sm">BURNOUT_PROBABILITY: <span className="font-bold" style={{ color:'#D2FF00' }}>{score}%</span></p>
+                    <div className="h-px w-12" style={{ background:'rgba(210,255,0,0.4)' }} />
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {burnout.advice.map((a, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: burnout.color, marginTop: 6, flexShrink: 0 }} />
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{a}</p>
+                {/* SVG Orb */}
+                <div className="relative w-72 h-72 md:w-96 md:h-96 z-10 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full orb-pulse" style={{ background:'rgba(0,219,231,0.1)', filter:'blur(80px)' }} />
+                  <svg className="w-full h-full mood-orb-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <radialGradient id="orbGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="#74f5ff" stopOpacity="0.9" />
+                        <stop offset="100%" stopColor="#006a71" stopOpacity="0.2" />
+                      </radialGradient>
+                    </defs>
+                    <circle cx="100" cy="100" r="85" fill="none" stroke="#D2FF00" strokeDasharray="10 5" strokeWidth="0.5" className="animate-spin" style={{ animationDuration:'8s' }} />
+                    <circle cx="100" cy="100" r="95" fill="none" stroke="#00dbe7" strokeDasharray="2 10" strokeWidth="0.2" className="animate-spin" style={{ animationDuration:'12s', animationDirection:'reverse' }} />
+                    <circle cx="100" cy="100" r="70" fill="url(#orbGrad)" className="orb-pulse" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                    <span className="font-bold drop-shadow-lg" style={{ fontFamily:'Space Grotesk', fontSize:48, color:'white' }}>{label}</span>
+                    <p className="terminal-text tracking-[0.4em] text-[10px] mt-2" style={{ color:'#D2FF00' }}>{sublabel}</p>
+                    <p className="terminal-text tracking-[0.2em] text-[8px] opacity-60 mt-1" style={{ color:'#b9cacb' }}>REAL-TIME SYNC</p>
+                  </div>
+                </div>
+                {/* Stats row */}
+                <div className="mt-12 flex gap-12 z-10 w-full justify-center">
+                  {[['STRESS_LEVEL', score < 30 ? 'LOW' : score < 60 ? 'MED' : 'HIGH'],
+                    ['FLOW_STATE', score < 40 ? 'ACTIVE' : 'REDUCED'],
+                    ['SLEEP_QLTY', `${Math.round(100 - score * 0.4)}%`]].map(([k,v]) => (
+                    <div key={k} className="text-center group cursor-default">
+                      <p className="text-[10px] terminal-text opacity-60 mb-1" style={{ color:'#b9cacb' }}>{k}</p>
+                      <p className="font-semibold text-2xl transition-colors" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>{v}</p>
                     </div>
                   ))}
                 </div>
-              </GlassCard>
-            </motion.div>
+              </div>
+
+              {/* Right column */}
+              <div className="lg:col-span-4 flex flex-col gap-8">
+                {/* Daily Check-in */}
+                <div className="glass-panel rounded-[2rem] p-8 hud-border">
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="font-semibold text-xl tracking-wide" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Status</h3>
+                    <span className="material-symbols-outlined animate-pulse" style={{ color:'#D2FF00' }}>bolt</span>
+                  </div>
+                  <p className="text-xs terminal-text opacity-70 tracking-widest mb-8" style={{ color:'#b9cacb' }}>HOW ARE YOU VIBRATING TODAY?</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[['mood','Focused'],['cloud','Drained'],['auto_awesome','Creative'],['self_improvement','Restless']].map(([icon,label]) => (
+                      <Link key={icon} to="/checkin">
+                        <button className="magnetic-btn w-full flex flex-col items-center gap-3 p-6 rounded-2xl border group transition-all"
+                          style={{ background:'rgba(255,255,255,0.05)', borderColor:'rgba(255,255,255,0.05)' }}>
+                          <span className="material-symbols-outlined text-3xl group-hover:text-[#D2FF00] transition-colors" style={{ color:'#e1fdff' }}>{icon}</span>
+                          <span className="text-[10px] terminal-text opacity-80" style={{ color:'#b9cacb' }}>{label}</span>
+                        </button>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AI Insights */}
+                <div className="glass-panel rounded-[2rem] p-8 flex-1 border-l-[3px]" style={{ borderLeftColor:'rgba(210,255,0,0.6)' }}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:'rgba(0,219,231,0.1)' }}>
+                      <span className="material-symbols-outlined text-sm" style={{ color:'#e1fdff', fontVariationSettings:"'FILL' 1" }}>smart_toy</span>
+                    </div>
+                    <h3 className="font-semibold text-xl tracking-tight" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Predictive Mesh Insights</h3>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="relative pl-6" style={{ borderLeft:'2px solid rgba(210,255,0,0.3)', paddingLeft:24 }}>
+                      <p className="text-[9px] terminal-text mb-1 tracking-[0.2em]" style={{ color:'#D2FF00' }}>PROACTIVE ALERT</p>
+                      <p className="text-sm leading-relaxed opacity-90" style={{ color:'#e5e2e3' }}>
+                        {score > 60 ? 'Critical burnout risk detected. Consider scheduling a recovery session.' : 'Stress peaks predicted for Thursday due to combined deadlines.'}
+                      </p>
+                    </div>
+                    <div className="relative pl-6" style={{ borderLeft:'2px solid rgba(0,219,231,0.3)', paddingLeft:24 }}>
+                      <p className="text-[9px] terminal-text mb-1 tracking-[0.2em]" style={{ color:'#e1fdff' }}>SUGGESTION</p>
+                      <p className="text-sm leading-relaxed opacity-90" style={{ color:'#e5e2e3' }}>Focus score was highest during 9:00 AM. Replicate lighting environment?</p>
+                    </div>
+                  </div>
+                  <Link to="/calmcal">
+                    <button className="mt-8 text-[10px] terminal-text font-bold flex items-center gap-2 transition-all hover:opacity-100 opacity-80 group" style={{ color:'#e1fdff' }}>
+                      FULL_ANALYSIS_DATA <span className="material-symbols-outlined text-[10px] group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lower Section — CalmCal preview */}
+          <div className="relative z-20 mt-20 rounded-3xl p-6 lg:p-8 mb-12 border"
+            style={{ background:'rgba(14,14,15,0.9)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.1)', boxShadow:'0 -30px 60px rgba(0,0,0,0.6)' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* CalmCal Bar Chart */}
+              <div className="lg:col-span-7 glass-panel rounded-[2rem] p-10 overflow-hidden hud-border">
+                <div className="flex justify-between items-center mb-10">
+                  <div>
+                    <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>CalmCal Visualizer</h3>
+                    <p className="text-xs opacity-60 tracking-wider terminal-text" style={{ color:'#b9cacb' }}>ACADEMIC_CYCLE // STRESS TRAJECTORY</p>
+                  </div>
+                  <div className="flex gap-3">
+                    {['#D2FF00','rgba(0,219,231,0.5)','rgba(255,180,171,0.5)'].map((c,i) => (
+                      <div key={i} className="w-2 h-2 rounded-full" style={{ background:c, boxShadow:`0 0 8px ${c}` }} />
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-6 h-48 items-end relative">
+                  <div className="absolute inset-0 flex flex-col justify-between opacity-10 pointer-events-none">
+                    {[0,1,2,3].map(i => <div key={i} className="h-px w-full bg-white" />)}
+                  </div>
+                  {chartHeights.map((h, i) => (
+                    <div key={i} className="rounded-t-lg border-x border-t hover:opacity-80 transition-all relative group"
+                      style={{ height:`${h}%`, background: h > 70 ? 'rgba(210,255,0,0.3)' : h > 50 ? 'rgba(255,180,171,0.2)' : 'rgba(0,219,231,0.15)', borderColor: h > 70 ? 'rgba(210,255,0,0.2)' : 'rgba(255,255,255,0.05)' }}>
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] terminal-text px-2 py-1 rounded"
+                        style={{ background:'rgba(0,0,0,0.8)', color:'#D2FF00' }}>{days[i]}: {h}%</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-6 mt-4 text-center">
+                  {days.map((d, i) => (
+                    <span key={d} className="text-[10px] terminal-text font-bold" style={{ color: chartHeights[i] > 70 ? '#e1fdff' : 'rgba(185,202,203,0.4)' }}>{d}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Featured resource */}
+              <div className="lg:col-span-5 rounded-[2rem] overflow-hidden relative group glass-panel">
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background:'linear-gradient(135deg, rgba(0,219,231,0.05) 0%, rgba(210,255,0,0.05) 50%, rgba(0,0,0,0.8) 100%)' }}>
+                  <span className="material-symbols-outlined text-[120px] opacity-10" style={{ color:'#e1fdff' }}>self_improvement</span>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                  <p className="text-[9px] terminal-text mb-3 tracking-[0.3em]" style={{ color:'#D2FF00' }}>MINDSET_DISCOVERY_04</p>
+                  <h4 className="font-semibold text-2xl text-white mb-6 leading-tight" style={{ fontFamily:'Space Grotesk' }}>Mastering Deep Work in Academic Cycles</h4>
+                  <button className="border px-8 py-3 rounded-full text-[10px] terminal-text transition-all duration-300 hover:bg-[#D2FF00] hover:text-black"
+                    style={{ background:'rgba(255,255,255,0.1)', backdropFilter:'blur(20px)', borderColor:'rgba(255,255,255,0.2)', color:'white' }}>
+                    COMMENCE_SESSION
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </main>
 
-        {/* Quick stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-          {quickStats.map(({ icon: Icon, label, value, color, note }, i) => (
-            <motion.div key={label} custom={4 + i} variants={fadeUp} initial="hidden" animate="visible">
-              <GlassCard style={{ padding: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}18`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={17} color={color} />
-                  </div>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-                </div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, marginBottom: 4 }}>{value}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{note}</div>
-              </GlassCard>
-            </motion.div>
+      {/* Footer */}
+      <footer className="w-full py-12 px-6 flex flex-col md:flex-row justify-between items-center gap-2 border-t md:ml-64"
+        style={{ background:'rgba(14,14,15,0.9)', borderColor:'rgba(255,255,255,0.05)', width:'calc(100% - 0px)' }}>
+        <div>
+          <span className="font-bold tracking-tighter opacity-60" style={{ fontFamily:'Space Grotesk', fontSize:20, color:'#e1fdff' }}>MindFlow_EcoSys</span>
+          <p className="text-[9px] terminal-text opacity-50 mt-1" style={{ color:'#b9cacb' }}>© 2024 NEURAL INTERFACE. ELEVATE CONSCIOUSNESS.</p>
+        </div>
+        <div className="flex gap-8">
+          {['PRIVACY','ETHICS_AI','RESEARCH','CONTACT'].map(l => (
+            <a key={l} href="#" className="text-[9px] terminal-text opacity-60 hover:opacity-100 hover:text-[#D2FF00] transition-all tracking-widest" style={{ color:'#b9cacb' }}>{l}</a>
           ))}
         </div>
-
-        {/* Burnout trend chart */}
-        <motion.div custom={7} variants={fadeUp} initial="hidden" animate="visible" style={{ marginBottom: 24 }}>
-          <GlassCard hover={false} style={{ padding: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <div>
-                <div className="label" style={{ marginBottom: 4 }}>14-day trend</div>
-                <h3 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 600 }}>Burnout Risk History</h3>
-              </div>
-              <div className="chip">
-                <div className="dot-live" />
-                Live
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={160}>
-              <AreaChart data={history}>
-                <defs>
-                  <linearGradient id="burnoutGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={burnout.color} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={burnout.color} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 11 }} tickLine={false} axisLine={false}
-                  tickFormatter={d => d.slice(5)} />
-                <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ background: '#0d1020', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: 13 }}
-                  labelStyle={{ color: 'rgba(255,255,255,0.6)' }}
-                  itemStyle={{ color: burnout.color }}
-                />
-                <Area type="monotone" dataKey="score" stroke={burnout.color} strokeWidth={2} fill="url(#burnoutGrad)" dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </GlassCard>
-        </motion.div>
-
-        {/* CTA */}
-        <motion.div custom={8} variants={fadeUp} initial="hidden" animate="visible">
-          <Link to="/checkin" style={{ textDecoration: 'none' }}>
-            <div className="glass" style={{
-              padding: '24px 32px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'linear-gradient(135deg, rgba(108,99,255,0.12), rgba(167,139,250,0.08))',
-              border: '1px solid rgba(108,99,255,0.25)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-            }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 40px rgba(108,99,255,0.25)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(108,99,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={20} color="#a78bfa" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, marginBottom: 2 }}>Ready for today's check-in?</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>30 seconds • Updates your burnout score instantly</div>
-                </div>
-              </div>
-              <ArrowRight size={20} color="rgba(255,255,255,0.4)" />
-            </div>
-          </Link>
-        </motion.div>
-      </div>
+      </footer>
     </div>
   );
 }

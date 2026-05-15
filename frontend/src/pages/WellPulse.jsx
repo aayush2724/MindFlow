@@ -1,402 +1,306 @@
-import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+
+const DEPTS = [
+  { name:'School of Engineering', nodes:'2,450_NODES', mood:'3.2 / 5.0', risk:'CRITICAL', riskColor:'#ffb4ab', dotColor:'#ffb4ab' },
+  { name:'Faculty of Fine Arts',  nodes:'1,120_NODES', mood:'4.6 / 5.0', risk:'LOW_RISK', riskColor:'#D2FF00',  dotColor:'#D2FF00' },
+  { name:'Medical Sciences',      nodes:'1,890_NODES', mood:'3.9 / 5.0', risk:'STABLE',   riskColor:'#00dbe7',  dotColor:'#00dbe7' },
+];
+
+const BARS = [
+  { h:30, color:'lime' },{ h:35, color:'lime' },{ h:42, color:'lime' },
+  { h:68, color:'error'},{ h:75, color:'error'},{ h:50, color:'lime' },
+  { h:45, color:'lime' },{ h:38, color:'lime' },{ h:32, color:'lime' },
+];
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP'];
 
 export default function WellPulse() {
   return (
-    <div className="bg-black text-on-surface font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container relative">
-      <style dangerouslySetInnerHTML={{ __html: `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .glass-card {
-            background: rgba(10, 10, 11, 0.4);
-            backdrop-filter: blur(40px);
-            border: 1px solid rgba(0, 242, 255, 0.15);
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.05) inset, 0 8px 32px rgba(0, 0, 0, 0.5);
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .glass-card:hover {
-            background: rgba(10, 10, 11, 0.6);
-            border-color: rgba(0, 242, 255, 0.4);
-            box-shadow: 0 0 40px rgba(0, 242, 255, 0.1) inset, 0 12px 40px rgba(0, 0, 0, 0.7);
-            transform: translateY(-2px);
-        }
-        .neon-border-glow {
-            box-shadow: 0 0 15px rgba(0, 219, 231, 0.3);
-        }
-        .terminal-text {
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: -0.02em;
-        }
-        .critical-alert-glow {
-            box-shadow: 0 0 20px rgba(255, 180, 171, 0.15), inset 0 0 10px rgba(255, 180, 171, 0.05);
-            animation: pulse-border 2s infinite alternate;
-        }
-        @keyframes pulse-border {
-            from { border-color: rgba(255, 180, 171, 0.2); }
-            to { border-color: rgba(255, 180, 171, 0.6); }
-        }
-        .chart-bar {
-            transform-origin: bottom;
-            animation: bar-rise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-        @keyframes bar-rise {
-            from { transform: scaleY(0); opacity: 0; }
-            to { transform: scaleY(1); opacity: 1; }
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-        .mesh-viz {
-            background-image: 
-                radial-gradient(circle at 50% 50%, rgba(0, 219, 231, 0.05) 0%, transparent 70%),
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
-            perspective: 1000px;
-        }
-        .mesh-grid {
-            transform: rotateX(60deg) translateY(-100px);
-            background-image: 
-                linear-gradient(rgba(0, 219, 231, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 219, 231, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-            mask-image: linear-gradient(to bottom, transparent, black);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black);
-        }
-        
-        .black-hole-container {
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-            background: #020202;
-            overflow: hidden;
-            pointer-events: none;
-        }
-        .accretion-disk-layer {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 250vw; height: 250vw;
-            transform: translate(-50%, -50%) rotateX(75deg);
-            background: radial-gradient(circle, transparent 10%, rgba(0, 242, 255, 0.8) 15%, rgba(0, 219, 231, 0.4) 25%, transparent 60%);
-            filter: blur(40px);
-            animation: spin-disk 40s linear infinite;
-            opacity: 0.5;
-        }
-        .accretion-disk-inner {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 150vw; height: 150vw;
-            transform: translate(-50%, -50%) rotateX(75deg);
-            background: radial-gradient(circle, transparent 12%, rgba(210, 255, 0, 0.6) 18%, rgba(0, 242, 255, 0.3) 30%, transparent 70%);
-            filter: blur(20px);
-            animation: spin-disk-reverse 30s linear infinite;
-            opacity: 0.6;
-        }
-        .event-horizon {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 60vh; height: 60vh;
-            transform: translate(-50%, -50%);
-            background: #000;
-            border-radius: 50%;
-            box-shadow: 0 0 120px 60px rgba(0, 242, 255, 0.2), inset 0 0 80px #000;
-            z-index: 1;
-            animation: pulse-horizon 8s ease-in-out infinite alternate;
-        }
-        .gravitational-lensing {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 120vw; height: 120vh;
-            transform: translate(-50%, -50%);
-            background: radial-gradient(circle, transparent 20%, rgba(255, 255, 255, 0.03) 40%, transparent 80%);
-            filter: blur(15px);
-            z-index: 2;
-        }
-        @keyframes spin-disk {
-            0% { transform: translate(-50%, -50%) rotateX(75deg) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotateX(75deg) rotate(360deg); }
-        }
-        @keyframes spin-disk-reverse {
-            0% { transform: translate(-50%, -50%) rotateX(75deg) rotate(360deg); }
-            100% { transform: translate(-50%, -50%) rotateX(75deg) rotate(0deg); }
-        }
-        @keyframes pulse-horizon {
-            0% { box-shadow: 0 0 100px 50px rgba(0, 242, 255, 0.15), inset 0 0 80px #000; }
-            100% { box-shadow: 0 0 140px 70px rgba(0, 242, 255, 0.25), inset 0 0 80px #000; }
-        }
-      `}} />
-
-      <div className="black-hole-container" id="space-bg">
-        <div className="accretion-disk-layer" id="accretion-disk-1"></div>
-        <div className="accretion-disk-inner" id="accretion-disk-2"></div>
-        <div className="event-horizon" id="event-horizon"></div>
-        <div className="gravitational-lensing"></div>
+    <div className="crt-overlay" style={{ background:'#000', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
+      {/* Black Hole BG */}
+      <div style={{ position:'fixed', inset:0, zIndex:-1, background:'#020202', overflow:'hidden' }}>
+        <div className="accretion-disk-layer" />
+        <div className="accretion-disk-inner-wp" />
+        <div className="event-horizon" />
+        <div className="gravitational-lensing-wp" style={{ zIndex:2 }} />
       </div>
 
-      <div className="fixed top-1/4 left-10 text-primary/20 terminal-text text-[8px] flex flex-col gap-1 z-10 opacity-40 pointer-events-none">
-        <span>[ SINGULARITY_PROXIMITY_ALERT ]</span>
-        <div className="h-px w-12 bg-primary/20"></div>
+      {/* Decorative accents */}
+      <div style={{ position:'fixed', top:'25%', left:40, zIndex:10, opacity:0.4, pointerEvents:'none' }}>
+        <span className="terminal-text text-[8px]" style={{ color:'rgba(0,219,231,0.5)' }}>[ SINGULARITY_PROXIMITY_ALERT ]</span>
+        <div className="h-px w-12 mt-1" style={{ background:'rgba(0,219,231,0.2)' }} />
       </div>
-      <div className="fixed bottom-1/3 right-12 text-electric-lime/20 terminal-text text-[8px] flex flex-col items-end gap-1 z-10 opacity-40 pointer-events-none">
-        <div className="h-px w-16 bg-electric-lime/20"></div>
-        <span>WARP_FIELD_STABLE</span>
+      <div style={{ position:'fixed', bottom:'33%', right:48, zIndex:10, opacity:0.4, textAlign:'right', pointerEvents:'none' }}>
+        <div className="h-px w-16 ml-auto mb-1" style={{ background:'rgba(210,255,0,0.2)' }} />
+        <span className="terminal-text text-[8px]" style={{ color:'rgba(210,255,0,0.5)' }}>WARP_FIELD_STABLE</span>
       </div>
 
-      {/* Top Navigation Bar */}
-      <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-gutter py-4 bg-background/60 backdrop-blur-2xl border-b border-glass-border">
-        <div className="flex items-center gap-base">
-          <span className="text-headline-md font-headline-md font-bold tracking-tight text-primary">MindFlow</span>
-          <span className="hidden md:block text-[10px] terminal-text text-on-surface-variant bg-surface-container/50 px-2 py-0.5 rounded border border-glass-border">SYS_ID: WELLPULSE_v4.2</span>
+      <Sidebar active="wellpulse" />
+
+      {/* Top Nav */}
+      <nav className="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-6 py-4 border-b"
+        style={{ background:'rgba(19,19,20,0.6)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-2">
+          <span className="font-bold tracking-tight" style={{ fontFamily:'Space Grotesk', fontSize:20, color:'#e1fdff' }}>MindFlow</span>
+          <span className="hidden md:block text-[10px] terminal-text px-2 py-0.5 rounded border" style={{ color:'#b9cacb', background:'rgba(32,31,32,0.5)', borderColor:'rgba(255,255,255,0.08)' }}>SYS_ID: WELLPULSE_v4.2</span>
         </div>
         <div className="flex items-center gap-6">
-          <div className="hidden md:flex items-center bg-surface-container-lowest/80 border border-glass-border rounded-lg px-4 py-1.5 gap-3">
-            <span className="material-symbols-outlined text-primary text-[20px]">search</span>
-            <input className="bg-transparent border-none focus:ring-0 text-body-md terminal-text text-on-surface placeholder:text-outline w-48 text-sm" placeholder="QUERY_COHORT..." type="text" />
+          <div className="hidden md:flex items-center rounded-lg px-4 py-1.5 gap-3 border" style={{ background:'rgba(14,14,15,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
+            <span className="material-symbols-outlined text-[20px]" style={{ color:'#e1fdff' }}>search</span>
+            <input className="bg-transparent border-none outline-none text-sm terminal-text w-48 placeholder:opacity-40" style={{ color:'#e5e2e3' }} placeholder="QUERY_COHORT..." />
           </div>
           <div className="flex items-center gap-4">
-            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
-            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">terminal</button>
-            <div className="w-10 h-10 rounded-full border border-primary/30 p-0.5">
-              <img alt="User profile" className="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXf1XwPjCpI9_y1XwAIu2rnr-0Zg1omM2AypRD3uJgDjCNu3kMRVsJP3ipDDj5jsuWSRZXvEsohJYqL_Aamb23gBgK0K7aVX6B7kBhWqhxEypKuD9KpoSvHvTNClx7RuoONVySWfoBYBhtKVqeZaYuXUTPjzohbEuLDZ9IUpc-EqW__PG5lJD-bzxVHWLboVzV0bGuNKK4TllDcJcQyANDeWniuzfO2U_OXyeIsOpbRkRYuNM3LJP62oD0jxV9Jt3wqFjGS4MHAKYH" />
+            <button><span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span></button>
+            <button><span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>terminal</span></button>
+            <div className="w-10 h-10 rounded-full border p-0.5" style={{ borderColor:'rgba(0,219,231,0.3)' }}>
+              <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-sm" style={{ background:'rgba(0,219,231,0.2)', color:'#e1fdff' }}>C</div>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Side Navigation Bar */}
-      <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 pt-24 pb-8 bg-[#0a0a0b]/40 backdrop-blur-3xl border-r border-glass-border z-40">
-        <div className="px-6 mb-8">
-          <h2 className="text-headline-md font-headline-md text-electric-lime">WellPulse</h2>
-          <p className="text-[10px] terminal-text text-on-surface-variant mt-1 tracking-widest uppercase">ANALYTICS ENGINE</p>
-        </div>
-        <nav className="flex-1 space-y-1">
-          <a className="bg-primary/10 text-primary border-r-2 border-primary flex items-center gap-4 px-6 py-3.5 transition-all" href="#">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
-            <span className="text-label-caps font-label-caps">DASHBOARD</span>
-          </a>
-          <a className="text-on-surface-variant flex items-center gap-4 px-6 py-3.5 hover:bg-glass-fill hover:text-primary transition-all" href="#">
-            <span className="material-symbols-outlined">analytics</span>
-            <span className="text-label-caps font-label-caps">MOODMAP</span>
-          </a>
-          <a className="text-on-surface-variant flex items-center gap-4 px-6 py-3.5 hover:bg-glass-fill hover:text-primary transition-all" href="#">
-            <span className="material-symbols-outlined">insights</span>
-            <span className="text-label-caps font-label-caps">CALMCAL</span>
-          </a>
-          <a className="text-on-surface-variant flex items-center gap-4 px-6 py-3.5 hover:bg-glass-fill hover:text-primary transition-all" href="#">
-            <span className="material-symbols-outlined">database</span>
-            <span className="text-label-caps font-label-caps">RESOURCES</span>
-          </a>
-        </nav>
-        <div className="px-6 space-y-4 pt-8 border-t border-glass-border/30">
-          <a className="text-on-surface-variant flex items-center gap-4 hover:text-primary transition-colors text-sm" href="#">
-            <span className="material-symbols-outlined text-[20px]">settings_input_component</span>
-            <span className="text-label-caps">CONFIG</span>
-          </a>
-          <a className="text-on-surface-variant flex items-center gap-4 hover:text-primary transition-colors text-sm" href="#">
-            <span className="material-symbols-outlined text-[20px]">help_center</span>
-            <span className="text-label-caps">SUPPORT</span>
-          </a>
-        </div>
-      </aside>
+      {/* Main */}
+      <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
+        <div className="max-w-7xl mx-auto">
 
-      <main className="pt-24 pb-12 px-gutter md:ml-64 relative z-20">
-        <div className="max-w-container-max mx-auto space-y-12">
-          
-          {/* Header + KPIs */}
-          <div className="bg-[#0a0a0b]/95 backdrop-blur-3xl rounded-3xl p-6 md:p-8 shadow-[0_-15px_40px_rgba(0,0,0,0.8)] border border-glass-border">
+          {/* Section 1: Header + KPIs */}
+          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ top:88, zIndex:10, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div className="space-y-2">
-                <h1 className="text-display-lg font-display-lg text-primary tracking-tight">Institutional Pulse</h1>
-                <p className="text-body-lg font-body-lg text-on-surface-variant max-w-2xl">Aggregate mental equilibrium telemetry. Monitoring <span className="terminal-text text-primary">14,200</span> active student nodes.</p>
+                <h1 className="font-bold tracking-tight" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(36px,5vw,64px)', color:'#e1fdff' }}>Institutional Pulse</h1>
+                <p className="text-lg font-light" style={{ color:'#b9cacb' }}>
+                  Aggregate mental equilibrium telemetry. Monitoring <span className="terminal-text" style={{ color:'#e1fdff' }}>14,200</span> active student nodes.
+                </p>
               </div>
               <div className="flex gap-3">
-                <button className="bg-primary/10 border border-primary/30 text-primary px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-primary/20 transition-all terminal-text text-sm">
+                <button className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80"
+                  style={{ background:'rgba(0,219,231,0.1)', borderColor:'rgba(0,219,231,0.3)', color:'#e1fdff' }}>
                   <span className="material-symbols-outlined text-[20px]">download</span> EXPORT_DATA
                 </button>
-                <button className="bg-surface-container/40 backdrop-blur-md border border-glass-border text-on-surface px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-surface-container-high transition-all terminal-text text-sm">
+                <button className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80"
+                  style={{ background:'rgba(32,31,32,0.4)', borderColor:'rgba(255,255,255,0.08)', color:'#e5e2e3' }}>
                   <span className="material-symbols-outlined text-[20px]">filter_alt</span> FILTERS
                 </button>
               </div>
             </header>
 
+            {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="glass-card p-6 rounded-2xl flex flex-col gap-2">
-                <span className="text-[10px] terminal-text text-on-surface-variant uppercase tracking-widest">AVG_BURNOUT_METRIC</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-headline-md font-headline-md text-electric-lime terminal-text">42.8%</span>
-                  <span className="text-xs terminal-text text-error flex items-center">
-                    <span className="material-symbols-outlined text-[14px]">trending_up</span> +4.2
-                  </span>
+              {[
+                { label:'AVG_BURNOUT_METRIC', val:'42.8%', sub:'+4.2 ▲', valColor:'#D2FF00', bar:42, barColor:'#D2FF00' },
+                { label:'HIGH_RISK_ALERTS',   val:'128',   sub:'CRITICAL_OVERFLOW', valColor:'#ffb4ab', sub_anim:true },
+                { label:'CALM_FLOW_SESSIONS', val:'3,492', sub:'⚡ ACTIVE', valColor:'#00dbe7', bar:null },
+                { label:'ENGAGEMENT_INDEX',   val:'88.5',  sub:'Optimal_State', valColor:'#e1fdff' },
+              ].map((kpi, i) => (
+                <div key={i} className="rounded-2xl p-6 flex flex-col gap-2 border transition-all hover:border-[rgba(0,219,231,0.4)]"
+                  style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
+                  <span className="text-[10px] terminal-text tracking-widest uppercase" style={{ color:'#b9cacb' }}>{kpi.label}</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-semibold terminal-text" style={{ fontSize:32, color:kpi.valColor }}>{kpi.val}</span>
+                    {kpi.sub && <span className={`text-xs terminal-text ${kpi.sub_anim ? 'animate-pulse' : ''}`} style={{ color:kpi.valColor, opacity:0.8 }}>{kpi.sub}</span>}
+                  </div>
+                  {kpi.bar && (
+                    <div className="h-1 w-full rounded-full mt-4 overflow-hidden" style={{ background:'rgba(53,52,54,1)' }}>
+                      <div className="h-full chart-bar rounded-full" style={{ width:`${kpi.bar}%`, background:kpi.barColor }} />
+                    </div>
+                  )}
                 </div>
-                <div className="h-1 w-full bg-surface-container-highest rounded-full mt-4 overflow-hidden">
-                  <div className="h-full bg-electric-lime chart-bar" style={{ width: '42%', animationDelay: '0.1s' }}></div>
-                </div>
-              </div>
-              <div className="glass-card p-6 rounded-2xl flex flex-col gap-2">
-                <span className="text-[10px] terminal-text text-on-surface-variant uppercase tracking-widest">HIGH_RISK_ALERTS</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-headline-md font-headline-md text-error terminal-text">128</span>
-                </div>
-                <span className="text-[10px] terminal-text text-error/80 mt-4 animate-pulse">CRITICAL_OVERFLOW</span>
-              </div>
-              <div className="glass-card p-6 rounded-2xl flex flex-col gap-2">
-                <span className="text-[10px] terminal-text text-on-surface-variant uppercase tracking-widest">CALM_FLOW_SESSIONS</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-headline-md font-headline-md text-surface-tint terminal-text">3,492</span>
-                  <span className="text-xs terminal-text text-surface-tint/60 flex items-center ml-1">
-                    <span className="material-symbols-outlined text-[14px]">bolt</span> ACTIVE
-                  </span>
-                </div>
-                <div className="flex -space-x-2 mt-4">
-                  <div className="w-6 h-6 rounded-full border border-background bg-surface-container-high"></div>
-                  <div className="w-6 h-6 rounded-full border border-background bg-surface-container-low"></div>
-                  <div className="w-6 h-6 rounded-full border border-background bg-surface-variant"></div>
-                  <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] terminal-text text-primary">+2k</div>
-                </div>
-              </div>
-              <div className="glass-card p-6 rounded-2xl flex flex-col gap-2">
-                <span className="text-[10px] terminal-text text-on-surface-variant uppercase tracking-widest">ENGAGEMENT_INDEX</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-headline-md font-headline-md text-primary terminal-text">88.5</span>
-                </div>
-                <span className="text-[10px] terminal-text text-primary/60 mt-4 uppercase">Optimal_State</span>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Visualization Layer */}
-          <div className="bg-[#0a0a0b]/95 backdrop-blur-3xl rounded-3xl p-6 md:p-8 shadow-[0_-15px_40px_rgba(0,0,0,0.8)] border border-glass-border">
+          {/* Section 2: Visualization */}
+          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ top:112, zIndex:20, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <section className="lg:col-span-2 glass-card rounded-3xl overflow-hidden flex flex-col h-[500px]">
-                <div className="p-8 flex justify-between items-center bg-gradient-to-b from-background/40 to-transparent">
+              {/* Mesh Map */}
+              <section className="lg:col-span-2 rounded-3xl overflow-hidden flex flex-col h-[500px] border transition-all hover:border-[rgba(0,219,231,0.4)]"
+                style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
+                <div className="p-8 flex justify-between items-center">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-2 py-0.5 rounded bg-secondary-container/20 border border-secondary-container/40 text-[9px] terminal-text text-secondary-fixed font-bold tracking-widest uppercase">Predictive_Mesh_Active</span>
-                      <span className="px-2 py-0.5 rounded bg-primary/10 border border-primary/30 text-[9px] terminal-text text-primary font-bold tracking-widest uppercase">Sync_Protocol_Link</span>
+                      <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" style={{ background:'rgba(182,0,248,0.2)', borderColor:'rgba(182,0,248,0.4)', color:'#f8d8ff' }}>Predictive_Mesh_Active</span>
+                      <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" style={{ background:'rgba(0,219,231,0.1)', borderColor:'rgba(0,219,231,0.3)', color:'#e1fdff' }}>Sync_Protocol_Link</span>
                     </div>
-                    <h3 className="text-headline-md font-headline-md text-primary tracking-tight">Topological Wellbeing Mesh</h3>
-                    <p className="text-sm terminal-text text-on-surface-variant">Real-time geospatial stress distribution rendered via Predictive Mesh engine.</p>
+                    <h3 className="font-semibold text-2xl mb-1" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Topological Wellbeing Mesh</h3>
+                    <p className="text-sm terminal-text" style={{ color:'#b9cacb' }}>Real-time geospatial stress distribution via Predictive Mesh engine.</p>
                   </div>
-                  <div className="flex bg-surface-container-lowest/80 backdrop-blur-md border border-glass-border rounded-lg p-1">
-                    <button className="px-4 py-1.5 bg-primary/10 text-primary rounded text-[10px] terminal-text font-bold">MESH_3D</button>
-                    <button className="px-4 py-1.5 text-on-surface-variant rounded text-[10px] terminal-text">FLAT_GRID</button>
+                  <div className="flex rounded-lg p-1 border" style={{ background:'rgba(14,14,15,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
+                    <button className="px-4 py-1.5 rounded text-[10px] terminal-text font-bold" style={{ background:'rgba(0,219,231,0.1)', color:'#e1fdff' }}>MESH_3D</button>
+                    <button className="px-4 py-1.5 rounded text-[10px] terminal-text" style={{ color:'#b9cacb' }}>FLAT_GRID</button>
                   </div>
                 </div>
-                <div className="flex-1 relative mesh-viz mx-8 mb-8 rounded-2xl overflow-hidden border border-glass-border">
-                  <div className="absolute inset-0 mesh-grid"></div>
+                <div className="flex-1 relative mesh-viz mx-8 mb-8 rounded-2xl overflow-hidden border" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
+                  <div className="mesh-grid" />
                   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-[20%] left-[30%] w-64 h-64 bg-error/10 blur-[100px] rounded-full animate-pulse"></div>
-                    <div className="absolute bottom-[30%] right-[20%] w-80 h-80 bg-primary/10 blur-[100px] rounded-full"></div>
-                    
-                    <div className="absolute top-[40%] left-[45%] flex flex-col items-center pointer-events-auto group cursor-crosshair">
-                      <div className="w-2 h-2 bg-error rounded-full neon-border-glow shadow-[0_0_10px_#ffb4ab]"></div>
-                      <div className="h-16 w-px bg-gradient-to-t from-error to-transparent"></div>
-                      <div className="bg-background/90 backdrop-blur-md border border-error/50 p-2 rounded terminal-text text-[10px] opacity-0 group-hover:opacity-100 transition-all transform scale-95 group-hover:scale-100">
-                        <div className="text-error font-bold mb-1">NODE: ENG_LOBBY</div>
-                        <div className="text-white">STRESS: 0.88μ</div>
-                        <div className="text-white/60">ALERTS: 12_ACTV</div>
+                    <div className="absolute rounded-full" style={{ top:'20%', left:'30%', width:256, height:256, background:'rgba(255,180,171,0.1)', filter:'blur(100px)', animation:'pulse 3s ease-in-out infinite' }} />
+                    <div className="absolute rounded-full" style={{ bottom:'30%', right:'20%', width:320, height:320, background:'rgba(0,219,231,0.1)', filter:'blur(100px)' }} />
+                  </div>
+                  {/* Data pins */}
+                  {[
+                    { top:'40%', left:'45%', color:'#ffb4ab', label:'NODE: ENG_LOBBY', stress:'0.88μ', alerts:'12_ACTV' },
+                    { bottom:'35%', right:'35%', color:'#D2FF00', label:'NODE: LIB_ZONE_C', stress:'0.12μ', alerts:'OPTIMAL' },
+                  ].map((pin, i) => (
+                    <div key={i} className="absolute flex flex-col items-center pointer-events-auto group cursor-crosshair"
+                      style={{ top:pin.top, left:pin.left, bottom:pin.bottom, right:pin.right }}>
+                      <div className="w-2 h-2 rounded-full" style={{ background:pin.color, boxShadow:`0 0 10px ${pin.color}` }} />
+                      <div className="h-16 w-px" style={{ background:`linear-gradient(to top, ${pin.color}, transparent)` }} />
+                      <div className="rounded p-2 opacity-0 group-hover:opacity-100 transition-all border terminal-text text-[10px]"
+                        style={{ background:'rgba(19,19,20,0.9)', backdropFilter:'blur(12px)', borderColor:`${pin.color}80` }}>
+                        <div className="font-bold mb-1" style={{ color:pin.color }}>{pin.label}</div>
+                        <div style={{ color:'white' }}>STRESS: {pin.stress}</div>
+                        <div style={{ color:'rgba(255,255,255,0.6)' }}>STATUS: {pin.alerts}</div>
                       </div>
-                    </div>
-                    
-                    <div className="absolute bottom-[35%] right-[35%] flex flex-col items-center pointer-events-auto group cursor-crosshair">
-                      <div className="w-2 h-2 bg-electric-lime rounded-full neon-border-glow shadow-[0_0_10px_#D2FF00]"></div>
-                      <div className="h-10 w-px bg-gradient-to-t from-electric-lime to-transparent"></div>
-                      <div className="bg-background/90 backdrop-blur-md border border-electric-lime/50 p-2 rounded terminal-text text-[10px] opacity-0 group-hover:opacity-100 transition-all transform scale-95 group-hover:scale-100">
-                        <div className="text-electric-lime font-bold mb-1">NODE: LIB_ZONE_C</div>
-                        <div className="text-white">STRESS: 0.12μ</div>
-                        <div className="text-white/60">STATUS: OPTIMAL</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Alerts */}
-              <section className="glass-card rounded-3xl p-8 flex flex-col h-[500px]">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] terminal-text text-on-surface-variant tracking-widest uppercase">SYSLOG_ALERTS</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] terminal-text text-error">LIVE_STREAM</span>
-                    <span className="flex h-2 w-2 rounded-full bg-error animate-ping"></span>
-                  </div>
-                </div>
-                <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-                  <div className="p-4 critical-alert-glow border border-error/30 rounded-xl bg-error/5">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] terminal-text font-bold text-error">CRITICAL_DETECTION</span>
-                      <span className="text-[10px] terminal-text text-on-surface-variant">02:14:05</span>
-                    </div>
-                    <p className="text-xs terminal-text text-on-surface leading-relaxed">COHORT_CS_Y3: Burnout threshold exceeded [0.75] for 45/200 nodes.</p>
-                    <button className="mt-4 w-full py-2 bg-error text-on-error rounded text-[10px] terminal-text font-bold uppercase hover:brightness-110 transition-all">DECODE_AND_INTERVENE</button>
-                  </div>
-                  <div className="p-4 bg-surface-container/50 border border-glass-border rounded-xl">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] terminal-text font-bold text-surface-tint">PATTERN_SYNC</span>
-                      <span className="text-[10px] terminal-text text-on-surface-variant">01:55:20</span>
-                    </div>
-                    <p className="text-xs terminal-text text-on-surface/80">LATENIGHT_ANOMALY: High intensity activity detected in LAW_LIB cluster.</p>
-                  </div>
-                  <div className="p-4 bg-surface-container/50 border border-glass-border rounded-xl">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] terminal-text font-bold text-electric-lime">HEALTH_CHECK</span>
-                      <span className="text-[10px] terminal-text text-on-surface-variant">00:10:45</span>
-                    </div>
-                    <p className="text-xs terminal-text text-on-surface/80">MED_SCHOOL: Positive trend. Calm_Sessions up 22% vs 24H_AVG.</p>
-                  </div>
-                </div>
-                <button className="w-full mt-6 py-3 border border-glass-border rounded-xl text-[10px] terminal-text text-on-surface-variant hover:text-primary transition-colors hover:bg-glass-fill uppercase tracking-widest">QUERY_FULL_LOGS</button>
-              </section>
-            </div>
-          </div>
-
-          {/* Burnout Trends */}
-          <div className="bg-[#0a0a0b]/95 backdrop-blur-3xl rounded-3xl p-6 md:p-8 shadow-[0_-15px_40px_rgba(0,0,0,0.8)] border border-glass-border">
-            <section className="glass-card rounded-3xl p-8 relative group/chart overflow-hidden">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-                <div>
-                  <h3 className="text-headline-md font-headline-md text-primary">Burnout Risk Trajectory</h3>
-                  <p className="text-sm terminal-text text-on-surface-variant uppercase tracking-tighter">PREDICTIVE_DATA_STREAM v1.0.2</p>
-                </div>
-                <div className="flex bg-surface-container-lowest/80 backdrop-blur-md border border-glass-border rounded-full p-1">
-                  <button className="px-5 py-1.5 rounded-full text-[10px] terminal-text font-bold text-on-surface-variant hover:text-primary transition-all">WEEKLY</button>
-                  <button className="px-5 py-1.5 bg-primary/10 text-primary rounded-full text-[10px] terminal-text font-bold">MONTHLY</button>
-                </div>
-              </div>
-              
-              {/* Manual Chart Implementation since HTML was truncated */}
-              <div className="h-64 flex items-end gap-2 justify-between w-full mt-8 border-b border-glass-border pb-4 relative">
-                {/* Y-axis lines */}
-                <div className="absolute inset-0 pointer-events-none opacity-20">
-                  <div className="h-[1px] w-full bg-white absolute top-0"></div>
-                  <div className="h-[1px] w-full bg-white absolute top-1/4"></div>
-                  <div className="h-[1px] w-full bg-white absolute top-2/4"></div>
-                  <div className="h-[1px] w-full bg-white absolute top-3/4"></div>
-                </div>
-                
-                {/* Bars */}
-                <div className="w-full h-full flex items-end gap-4 justify-between pt-8 z-10">
-                  {[20, 30, 45, 60, 85, 95, 70, 50, 40, 35].map((val, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-crosshair">
-                      <div className="w-full relative chart-bar" style={{ height: `${val}%`, animationDelay: `${i * 0.05}s` }}>
-                        <div className={`w-full h-full rounded-t-sm ${val > 80 ? 'bg-error shadow-[0_0_15px_#ffb4ab]' : val > 50 ? 'bg-electric-lime shadow-[0_0_15px_#D2FF00]' : 'bg-primary shadow-[0_0_15px_#00dbe7]'}`}></div>
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-black/80 px-2 py-1 rounded text-white text-[10px] terminal-text whitespace-nowrap transition-opacity pointer-events-none z-20">
-                          {val}% RISK
-                        </div>
-                      </div>
-                      <span className="text-[10px] terminal-text text-on-surface-variant opacity-50">{i + 1}W</span>
                     </div>
                   ))}
                 </div>
+              </section>
+
+              {/* Alerts Feed */}
+              <section className="rounded-3xl p-8 flex flex-col h-[500px] border transition-all hover:border-[rgba(0,219,231,0.4)]"
+                style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-[10px] terminal-text tracking-widest uppercase" style={{ color:'#b9cacb' }}>SYSLOG_ALERTS</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] terminal-text" style={{ color:'#ffb4ab' }}>LIVE_STREAM</span>
+                    <span className="flex h-2 w-2 rounded-full bg-[#ffb4ab] animate-ping" />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                  {[
+                    { type:'CRITICAL_DETECTION', time:'02:14:05', msg:'COHORT_CS_Y3: Burnout threshold exceeded [0.75] for 45/200 nodes.', color:'#ffb4ab', action:'DECODE_AND_INTERVENE', bg:'rgba(255,180,171,0.05)', border:'rgba(255,180,171,0.3)' },
+                    { type:'PATTERN_SYNC',       time:'01:55:20', msg:'LATENIGHT_ANOMALY: High intensity activity detected in LAW_LIB cluster.', color:'#00dbe7', bg:'rgba(32,31,32,0.5)' },
+                    { type:'HEALTH_CHECK',        time:'00:10:45', msg:'MED_SCHOOL: Positive trend. Calm_Sessions up 22% vs 24H_AVG.', color:'#D2FF00', bg:'rgba(32,31,32,0.5)' },
+                  ].map((alert, i) => (
+                    <div key={i} className={`p-4 rounded-xl border ${alert.action ? 'critical-alert-glow' : ''}`}
+                      style={{ background:alert.bg, borderColor:alert.border || 'rgba(255,255,255,0.08)' }}>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[10px] terminal-text font-bold" style={{ color:alert.color }}>{alert.type}</span>
+                        <span className="text-[10px] terminal-text" style={{ color:'#b9cacb' }}>{alert.time}</span>
+                      </div>
+                      <p className="text-xs terminal-text leading-relaxed" style={{ color:'rgba(229,226,227,0.9)' }}>{alert.msg}</p>
+                      {alert.action && (
+                        <button className="mt-4 w-full py-2 rounded text-[10px] terminal-text font-bold uppercase transition-all hover:brightness-110"
+                          style={{ background:'#ffb4ab', color:'#690005' }}>{alert.action}</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button className="w-full mt-6 py-3 border rounded-xl text-[10px] terminal-text uppercase tracking-widest transition-colors hover:text-[#e1fdff] hover:bg-[rgba(255,255,255,0.03)]"
+                  style={{ borderColor:'rgba(255,255,255,0.08)', color:'#b9cacb' }}>QUERY_FULL_LOGS</button>
+              </section>
+            </div>
+          </div>
+
+          {/* Section 3: Burnout Trend Chart */}
+          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ top:136, zIndex:30, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
+            <section className="rounded-3xl p-8 relative overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
+              style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+                <div>
+                  <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Burnout Risk Trajectory</h3>
+                  <p className="text-sm terminal-text tracking-tighter" style={{ color:'#b9cacb' }}>PREDICTIVE_DATA_STREAM v1.0.2</p>
+                </div>
+                <div className="flex rounded-full p-1 border" style={{ background:'rgba(14,14,15,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
+                  {['WEEKLY','MONTHLY','SEMESTER'].map((p, i) => (
+                    <button key={p} className="px-5 py-1.5 rounded-full text-[10px] terminal-text font-bold transition-all"
+                      style={{ background: i===1 ? 'rgba(0,219,231,0.1)' : 'transparent', color: i===1 ? '#e1fdff' : '#b9cacb' }}>{p}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="w-full h-72 relative flex items-end justify-between border-b px-6 pb-4" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                  {[0,1,2,3,4].map(i => <div key={i} className="border-t w-full" style={{ borderColor:'rgba(255,255,255,0.05)' }} />)}
+                </div>
+                {BARS.map((bar, i) => (
+                  <div key={i} className="w-[8%] rounded-t border-x border-t chart-bar relative"
+                    style={{
+                      height:`${bar.h}%`,
+                      animationDelay:`${(i+1)*0.1}s`,
+                      background: bar.color==='error' ? 'linear-gradient(to top,rgba(255,180,171,0.1),rgba(255,180,171,0.7))' : 'linear-gradient(to top,rgba(210,255,0,0.1),rgba(210,255,0,0.6))',
+                      borderColor: bar.color==='error' ? 'rgba(255,180,171,0.2)' : 'rgba(210,255,0,0.2)',
+                    }} />
+                ))}
+              </div>
+              <div className="flex justify-between px-6 mt-4 terminal-text text-[10px] font-bold" style={{ color:'#b9cacb' }}>
+                {MONTHS.map(m => <span key={m}>{m}</span>)}
+              </div>
+            </section>
+          </div>
+
+          {/* Section 4: Departmental Table */}
+          <div className="sticky rounded-3xl p-6 md:p-8 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ top:160, zIndex:40, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
+            <section className="rounded-3xl overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
+              style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
+              <div className="p-8 border-b flex justify-between items-center" style={{ borderColor:'rgba(255,255,255,0.08)', background:'rgba(28,27,28,0.3)' }}>
+                <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Departmental deep_dive</h3>
+                <span className="text-[10px] terminal-text" style={{ color:'#b9cacb' }}>3_CLUSTERS_ACTIVE</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead style={{ background:'rgba(42,42,43,0.2)' }}>
+                    <tr>
+                      {['NODE_ID','CAPACITY','MOOD_IDX','RISK_LVL','OP'].map(h => (
+                        <th key={h} className="px-8 py-5 text-[10px] terminal-text font-bold tracking-widest uppercase" style={{ color:'#b9cacb' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DEPTS.map((d, i) => (
+                      <tr key={i} className="transition-colors hover:bg-[rgba(0,219,231,0.03)]" style={{ borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+                        <td className="px-8 py-6 font-bold text-sm terminal-text" style={{ color:'#e5e2e3' }}>{d.name}</td>
+                        <td className="px-8 py-6 text-sm terminal-text" style={{ color:'#b9cacb' }}>{d.nodes}</td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full" style={{ background:d.dotColor, boxShadow:`0 0 8px ${d.dotColor}` }} />
+                            <span className="terminal-text text-sm" style={{ color:'#e5e2e3' }}>{d.mood}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="px-3 py-1 rounded border text-[10px] terminal-text font-bold"
+                            style={{ background:`${d.riskColor}1A`, color:d.riskColor, borderColor:`${d.riskColor}33` }}>{d.risk}</span>
+                        </td>
+                        <td className="px-8 py-6">
+                          <button className="text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-colors hover:text-[#D2FF00]" style={{ color:'#e1fdff' }}>FETCH_DETAILS</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
           </div>
 
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="md:ml-64 py-12 px-6 flex flex-col md:flex-row justify-between items-center gap-8 border-t mt-24"
+        style={{ background:'rgba(10,10,11,0.6)', backdropFilter:'blur(20px)', borderColor:'rgba(255,255,255,0.05)', position:'relative', zIndex:20 }}>
+        <div className="flex flex-col gap-2">
+          <span className="font-bold" style={{ fontFamily:'Space Grotesk', fontSize:24, color:'#e1fdff' }}>MindFlow</span>
+          <span className="text-[10px] terminal-text tracking-widest uppercase" style={{ color:'#b9cacb' }}>© 2024 MINDFLOW_ECOSYSTEM. LEVEL_4_ACCESS.</span>
+        </div>
+        <div className="flex gap-8">
+          {['PRIVACY_POLICY','ETHICS_CORE','SECURE_CONTACT'].map(l => (
+            <a key={l} href="#" className="text-[10px] terminal-text font-bold uppercase transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>{l}</a>
+          ))}
+        </div>
+      </footer>
+
+      {/* Mobile Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full px-6 py-3 flex justify-around items-center z-50 border-t"
+        style={{ background:'rgba(19,19,20,0.8)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
+        {[['grid_view','DASH','/wellpulse'],['analytics','MAP','#'],['notifications','LOGS','#']].map(([icon,label,to]) => (
+          <Link key={label} to={to} className="flex flex-col items-center gap-1" style={{ color: label==='DASH' ? '#e1fdff' : '#b9cacb' }}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: label==='DASH' ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
+            <span className="text-[9px] terminal-text font-bold">{label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

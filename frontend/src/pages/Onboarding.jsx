@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, BookOpen, Moon, Target, Check } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import { useAuth } from '../context/AuthContext';
+import { db, DEMO_MODE } from '../lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const STEPS = [
   {
@@ -42,6 +45,7 @@ const STEPS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [data, setData] = useState({});
 
@@ -50,9 +54,19 @@ export default function Onboarding() {
 
   const handleChange = (id, value) => setData(prev => ({ ...prev, [id]: value }));
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLast) {
       localStorage.setItem('mf_onboarding', JSON.stringify(data));
+      if (!DEMO_MODE && user?.uid) {
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            profile: data,
+            onboardedAt: serverTimestamp(),
+          }, { merge: true });
+        } catch (err) {
+          console.warn('Onboarding Firestore save failed (non-critical):', err.message);
+        }
+      }
       navigate('/dashboard');
     } else {
       setStep(s => s + 1);

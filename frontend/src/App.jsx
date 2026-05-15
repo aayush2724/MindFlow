@@ -43,8 +43,9 @@ function LoadingScreen() {
 function AppRoutes() {
   const location = useLocation();
   const { user } = useAuth();
-  const showNav = !['/', '/auth', '/calmcal', '/wellpulse'].includes(location.pathname);
-  const showGlobalBackground = !['/', '/calmcal', '/wellpulse'].includes(location.pathname);
+  // Only Auth and Onboarding use the old global nav/bg system
+  const showNav = ['/onboarding', '/checkin'].includes(location.pathname);
+  const showGlobalBackground = ['/onboarding', '/checkin'].includes(location.pathname);
 
   return (
     <SmoothScroll>

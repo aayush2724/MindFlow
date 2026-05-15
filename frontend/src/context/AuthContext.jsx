@@ -1,6 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { DEMO_MODE, auth } from '../lib/firebase';
-import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
+import { DEMO_MODE, auth, googleProvider } from '../lib/firebase';
+import {
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from 'firebase/auth';
+
 const AuthContext = createContext(null);
 
 // Mock user for demo mode
@@ -27,7 +35,6 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (DEMO_MODE) {
-      // Auto sign-in with mock user in demo mode
       const saved = localStorage.getItem('mf_demo_user');
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -60,19 +67,22 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     if (DEMO_MODE) {
       localStorage.removeItem('mf_demo_user');
+      localStorage.removeItem('mf_last_checkin');
+      localStorage.removeItem('mf_history');
       setUser(null);
       return;
     }
     await signOut(auth);
   };
 
-
   const login = async (email, password) => {
     if (DEMO_MODE) {
       signInDemo(email.includes('counselor'));
       return;
     }
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    setUser({ ...cred.user, role: 'student' });
+    setRole('student');
   };
 
   const signup = async (email, password, name) => {
@@ -83,6 +93,7 @@ export function AuthProvider({ children }) {
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: name });
     setUser({ ...newUser, role: 'student' });
+    setRole('student');
   };
 
   const loginWithGoogle = async () => {
@@ -90,7 +101,9 @@ export function AuthProvider({ children }) {
       signInDemo(false);
       return;
     }
-    await signInWithPopup(auth, googleProvider);
+    const cred = await signInWithPopup(auth, googleProvider);
+    setUser({ ...cred.user, role: 'student' });
+    setRole('student');
   };
 
   return (

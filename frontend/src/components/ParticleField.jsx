@@ -89,11 +89,11 @@ export default function ParticleField({ count = 180, color = '#6c63ff' }) {
     window.addEventListener('resize', onResize);
 
     let frameId;
-    const clock = new THREE.Clock();
+    let startTime = Date.now();
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      const t = (Date.now() - startTime) / 1000;
       material.uniforms.uTime.value = t;
 
       const pos = geometry.attributes.position.array;

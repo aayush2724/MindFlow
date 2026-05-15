@@ -7,11 +7,14 @@ import MoodSlider from '../components/MoodSlider';
 import BurnoutGauge from '../components/BurnoutGauge';
 import StressOrb from '../components/StressOrb';
 import { calculateBurnoutScore } from '../lib/burnoutEngine';
+import { saveCheckin } from '../lib/firestore';
+import { useAuth } from '../context/AuthContext';
 
 const PHASES = ['checkin', 'result'];
 
 export default function CheckIn() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [phase, setPhase] = useState('checkin');
   const [values, setValues] = useState({ mood: 6, sleep: 7, workload: 5, stress: 4 });
   const [result, setResult] = useState(null);
@@ -21,12 +24,20 @@ export default function CheckIn() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    const res = calculateBurnoutScore(values);
-    localStorage.setItem('mf_last_checkin', JSON.stringify(values));
-    setResult(res);
-    setLoading(false);
-    setPhase('result');
+    try {
+      const res = calculateBurnoutScore(values);
+      await saveCheckin(user?.uid || 'demo', values);
+      setResult(res);
+      setPhase('result');
+    } catch (err) {
+      console.error('Failed to save check-in:', err);
+      // Fallback: still show result even if Firestore fails
+      const res = calculateBurnoutScore(values);
+      setResult(res);
+      setPhase('result');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

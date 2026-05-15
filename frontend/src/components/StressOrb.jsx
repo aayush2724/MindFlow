@@ -143,11 +143,11 @@ export default function StressOrb({ score = 50, size = 300 }) {
     sceneRef.current = { renderer, scene, camera, material, mesh, ring };
 
     let frameId;
-    const clock = new THREE.Clock();
+    let startTime = Date.now();
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      const t = (Date.now() - startTime) / 1000;
       material.uniforms.uTime.value = t;
       mesh.rotation.y = t * 0.15;
       mesh.rotation.z = Math.sin(t * 0.3) * 0.05;

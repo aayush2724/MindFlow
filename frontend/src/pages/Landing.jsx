@@ -1,275 +1,300 @@
 import { useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import ParticleField from '../components/ParticleField';
-import StressOrb from '../components/StressOrb';
 
 export default function Landing() {
-  const { scrollYProgress } = useScroll();
-  const yBg = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
-  const opacityHero = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const scaleHero = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
+  useEffect(() => {
+    // Custom cursor
+    const onMove = (e) => {
+      document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`);
+    };
+    document.addEventListener('mousemove', onMove);
+
+    // Scroll reveal + nav
+    const revealEls = document.querySelectorAll('.reveal-on-scroll');
+    const nav = document.getElementById('main-nav');
+    const onScroll = () => {
+      const y = window.scrollY;
+      revealEls.forEach(el => {
+        if (el.getBoundingClientRect().top < window.innerHeight * 0.85) el.classList.add('active');
+      });
+      if (nav) {
+        if (y > 100) nav.classList.add('bg-[#020202]/80','backdrop-blur-xl','border-b','border-white/5');
+        else nav.classList.remove('bg-[#020202]/80','backdrop-blur-xl','border-b','border-white/5');
+      }
+    };
+    window.addEventListener('scroll', onScroll);
+    onScroll();
+
+    // Mouse parallax for hero layers
+    const onMouseMove = (e) => {
+      document.querySelectorAll('.parallax-layer').forEach(layer => {
+        const d = parseFloat(layer.dataset.depth) || 0;
+        const x = (window.innerWidth / 2 - e.pageX) / 60;
+        const y = (window.innerHeight / 2 - e.pageY) / 60;
+        layer.style.transform = `translate3d(${x * d}px,${y * d}px,0)`;
+      });
+    };
+    document.addEventListener('mousemove', onMouseMove);
+
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
 
   return (
-    <div className="font-body-md text-on-background relative overflow-hidden">
-      {/* 3D Background Elements */}
-      <div className="fixed inset-0 z-0 pointer-events-none bg-[#020202]">
-        <ParticleField count={250} color="#00dbe7" />
+    <div style={{ background: '#020202', color: '#e5e2e3', cursor: 'none', overflowX: 'hidden', fontFamily: 'Space Grotesk, sans-serif' }}>
+      {/* Custom cursor */}
+      <div className="custom-cursor" />
+      <div className="custom-cursor-follower" />
+
+      {/* Black Hole Background */}
+      <div style={{ position:'fixed', inset:0, zIndex:-2, background:'#020202', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 50% 40%, rgba(0,219,231,0.05) 0%, transparent 60%)' }} />
+        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%) rotateX(75deg)', width:1200, height:1200 }}>
+          <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'conic-gradient(from 0deg,rgba(0,219,231,0.1) 0%,rgba(210,255,0,0.4) 25%,rgba(0,219,231,0.8) 50%,rgba(210,255,0,0.4) 75%,rgba(0,219,231,0.1) 100%)', filter:'blur(40px)', opacity:0.8, animation:'disk-spin 40s linear infinite' }} />
+          <div style={{ position:'absolute', inset:'15%', borderRadius:'50%', background:'conic-gradient(from 180deg,rgba(210,255,0,0.2) 0%,rgba(0,219,231,0.6) 25%,rgba(210,255,0,0.8) 50%,rgba(0,219,231,0.6) 75%,rgba(210,255,0,0.2) 100%)', filter:'blur(20px)', animation:'disk-spin 30s linear infinite reverse' }} />
+        </div>
+        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:400, height:400, borderRadius:'50%', boxShadow:'0 0 80px 20px rgba(0,219,231,0.3), 0 0 150px 40px rgba(210,255,0,0.1)', zIndex:1 }} />
+        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:380, height:380, background:'#000', borderRadius:'50%', zIndex:2 }} />
       </div>
 
-      <main className="relative z-10">
-        {/* Hero Section */}
-        <motion.section 
-          style={{ opacity: opacityHero, scale: scaleHero }}
-          className="relative min-h-screen flex flex-col items-center justify-center text-center px-gutter overflow-hidden"
-        >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30 blur-[100px] pointer-events-none z-0">
-            <StressOrb score={40} size={800} />
+      {/* Nav */}
+      <nav id="main-nav" className="fixed top-0 w-full z-50 flex justify-between items-center px-10 py-6 transition-all duration-500">
+        <span style={{ fontFamily:'Space Grotesk', fontWeight:700, fontSize:28, letterSpacing:'-0.04em', color:'#e1fdff' }}>MINDFLOW</span>
+        <div className="hidden md:flex items-center gap-12">
+          {['DASHBOARD','RESOURCES','COMMUNITY'].map((l,i) => (
+            <Link key={l} to={i===0?'/dashboard':'#'} className="text-[11px] font-semibold tracking-[0.3em] transition-colors duration-300"
+              style={{ color: i===0 ? '#e1fdff' : '#b9cacb' }}>{l}</Link>
+          ))}
+        </div>
+        <Link to="/auth">
+          <button className="px-8 py-3 rounded-full font-bold text-xs tracking-[0.2em] transition-all hover:scale-105"
+            style={{ background:'#e1fdff', color:'#003548' }}>
+            GET STARTED
+          </button>
+        </Link>
+      </nav>
+
+      {/* Hero */}
+      <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center text-center px-10 overflow-hidden z-10">
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="parallax-layer absolute inset-0 opacity-20" data-depth="0.1">
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full" style={{ background:'rgba(0,219,231,0.06)', filter:'blur(120px)' }} />
           </div>
-          
-          <div className="relative z-10 ultra-wide space-y-10">
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <h1 className="text-display-lg-mobile md:text-display-lg font-bold leading-[1] tracking-tighter">
-                PREDICT <span className="text-primary italic font-light">BURNOUT.</span><br />
-                PREVENT <span className="text-electric-lime">CRISIS.</span>
-              </h1>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 1 }}
-              className="flex items-center justify-center gap-4 py-4"
-            >
-              <div className="h-[1px] w-20 bg-gradient-to-r from-transparent to-primary"></div>
-              <p className="text-label-caps font-semibold tracking-[0.5em] text-primary">PROTECT STUDENTS</p>
-              <div className="h-[1px] w-20 bg-gradient-to-l from-transparent to-primary"></div>
-            </motion.div>
-
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 1 }}
-              className="text-body-lg font-light text-on-surface-variant max-w-2xl mx-auto leading-relaxed"
-            >
-              Shift mental health support from reactive response to proactive prevention with next-generation AI emotional intelligence.
-            </motion.p>
-
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1, duration: 0.5 }}
-              className="flex flex-col md:flex-row items-center justify-center gap-8 pt-12"
-            >
-              <Link to="/auth">
-                <button className="px-12 py-5 bg-primary text-on-primary font-bold rounded-full text-sm tracking-[0.2em] shadow-[0_20px_40px_rgba(0,0,0,0.4)] hover:scale-105 transition-all">
-                  FOR STUDENTS
-                </button>
-              </Link>
-              <Link to="/auth">
-                <button className="px-12 py-5 glass-card text-primary font-bold rounded-full text-sm tracking-[0.2em] hover:bg-white/10 transition-all border-primary/20">
-                  FOR INSTITUTIONS
-                </button>
-              </Link>
-            </motion.div>
+          <div className="parallax-layer absolute inset-0" data-depth="0.3">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-white/5" />
           </div>
+        </div>
+        <div className="relative z-10 ultra-wide space-y-10" style={{ animation:'heroReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards', opacity:0 }}>
+          <h1 style={{ fontFamily:'Space Grotesk', fontWeight:700, fontSize:'clamp(48px,7vw,80px)', lineHeight:1.05, letterSpacing:'-0.04em', color:'#e1fdff' }}>
+            PREDICT <span style={{ fontStyle:'italic', fontWeight:300 }}>BURNOUT.</span><br />
+            PREVENT <span style={{ color:'#D2FF00' }}>CRISIS.</span>
+          </h1>
+          <div className="flex items-center justify-center gap-4 py-4">
+            <div className="h-px w-20" style={{ background:'linear-gradient(90deg,transparent,#e1fdff)' }} />
+            <p className="text-[11px] font-semibold tracking-[0.5em]" style={{ color:'#e1fdff' }}>PROTECT STUDENTS</p>
+            <div className="h-px w-20" style={{ background:'linear-gradient(270deg,transparent,#e1fdff)' }} />
+          </div>
+          <p className="text-lg font-light max-w-2xl mx-auto leading-relaxed" style={{ color:'#b9cacb' }}>
+            Shift mental health support from reactive response to proactive prevention with next-generation AI emotional intelligence.
+          </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 pt-12">
+            <Link to="/auth">
+              <button className="px-12 py-5 rounded-full font-bold text-sm tracking-[0.2em] transition-all hover:scale-105"
+                style={{ background:'#e1fdff', color:'#003548', boxShadow:'0 0 40px rgba(225,253,255,0.2)' }}>
+                FOR STUDENTS
+              </button>
+            </Link>
+            <Link to="/auth">
+              <button className="px-12 py-5 rounded-full font-bold text-sm tracking-[0.2em] transition-all border"
+                style={{ color:'#e1fdff', borderColor:'rgba(225,253,255,0.2)', background:'rgba(255,255,255,0.02)', backdropFilter:'blur(24px)' }}>
+                FOR INSTITUTIONS
+              </button>
+            </Link>
+          </div>
+        </div>
+        <div className="absolute bottom-12 flex flex-col items-center gap-4" style={{ opacity:0.4 }}>
+          <span className="text-[10px] tracking-[0.4em] terminal-text">SCROLL TO EXPLORE</span>
+          <div className="w-px h-20" style={{ background:'linear-gradient(to bottom,#e1fdff,rgba(225,253,255,0.5),transparent)' }} />
+        </div>
+      </section>
 
-          <motion.div 
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute bottom-12 flex flex-col items-center gap-4 opacity-40"
-          >
-            <span className="text-label-caps tracking-[0.4em] text-[10px]">SCROLL TO EXPLORE</span>
-            <div className="w-[1px] h-20 bg-gradient-to-b from-primary via-primary/50 to-transparent"></div>
-          </motion.div>
-        </motion.section>
-
-        {/* Bento Grid Storytelling */}
-        <section className="min-h-screen py-20 px-gutter bg-[#020202]/90 backdrop-blur-2xl border-t border-glass-border relative overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-          <div className="ultra-wide">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
-              
-              {/* MoodMap Module */}
-              <motion.div 
-                initial={{ opacity: 0, y: 100 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="md:col-span-7 glass-card rounded-[3rem] p-16 overflow-hidden relative group"
-              >
-                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 blur-[100px] pointer-events-none transition-all duration-700 group-hover:bg-primary/10"></div>
-                <div className="flex flex-col h-full justify-between gap-16">
-                  <div className="max-w-md relative z-10">
-                    <span className="text-electric-lime font-label-caps tracking-[0.3em] mb-8 block">MODULE 01</span>
-                    <h3 className="text-headline-md font-bold text-primary mb-6">MOODMAP</h3>
-                    <p className="text-body-lg font-light text-on-surface-variant">
-                      Our AI parses micro-patterns in sentiment to predict mental fatigue before it peaks. Real-time emotional scoring at your fingertips.
-                    </p>
-                  </div>
-                  <div className="relative h-80 bg-surface-container-highest/20 rounded-3xl border border-glass-border p-10 overflow-hidden group-hover:border-primary/30 transition-all z-10">
-                    <div className="flex items-end gap-5 h-full">
-                      <div className="flex-1 bg-primary/10 h-[40%] rounded-t-2xl transition-all duration-1000 group-hover:h-[50%]"></div>
-                      <div className="flex-1 bg-primary/20 h-[65%] rounded-t-2xl transition-all duration-1000 delay-100 group-hover:h-[75%]"></div>
-                      <div className="flex-1 bg-electric-lime/40 h-[90%] rounded-t-2xl relative transition-all duration-1000 delay-200 group-hover:h-[85%]">
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-electric-lime text-background px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest">CRITICAL</div>
-                      </div>
-                      <div className="flex-1 bg-primary/15 h-[50%] rounded-t-2xl transition-all duration-1000 delay-300 group-hover:h-[60%]"></div>
-                      <div className="flex-1 bg-primary/10 h-[30%] rounded-t-2xl transition-all duration-1000 delay-400 group-hover:h-[45%]"></div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Small Info Cards */}
-              <div className="md:col-span-5 flex flex-col gap-12">
-                <motion.div 
-                  initial={{ opacity: 0, x: 100 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  className="glass-card rounded-[3rem] p-12 flex flex-col items-center justify-center text-center gap-8 border-secondary/10 hover:border-secondary/40 flex-grow group"
-                >
-                  <div className="w-24 h-24 rounded-full bg-secondary-container/10 flex items-center justify-center text-secondary border border-secondary/20 group-hover:scale-110 transition-transform duration-500">
-                    <span className="material-symbols-outlined text-5xl">query_stats</span>
-                  </div>
-                  <div>
-                    <h4 className="text-headline-md font-bold mb-4">INSIGHTS</h4>
-                    <p className="text-on-surface-variant font-light px-6">Instant feedback on cognitive load and emotional trajectory trajectories.</p>
-                  </div>
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0, x: 100 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
-                  className="glass-card rounded-[3rem] p-12 flex flex-col gap-8 relative overflow-hidden group border-primary/10 hover:border-primary/40"
-                >
-                  <span className="text-electric-lime font-label-caps tracking-[0.3em]">MODULE 02</span>
-                  <h3 className="text-headline-md font-bold text-primary">CALMCAL</h3>
-                  <p className="text-on-surface-variant font-light text-body-md">
-                    Stress-aware calendar assistant visualizing your week as a thermal stress map.
+      {/* Bento Grid */}
+      <section className="sticky top-0 min-h-screen py-20 px-10 border-t z-20 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+        style={{ background:'rgba(2,2,2,0.9)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
+        <div className="ultra-wide">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+            {/* MoodMap */}
+            <div className="md:col-span-7 glass-panel reveal-on-scroll rounded-[3rem] p-16 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none transition-all duration-700"
+                style={{ background:'rgba(0,219,231,0.05)', filter:'blur(100px)' }} />
+              <div className="flex flex-col h-full justify-between gap-16">
+                <div className="max-w-md">
+                  <span className="text-[11px] font-semibold tracking-[0.3em] block mb-8" style={{ color:'#D2FF00' }}>MODULE 01</span>
+                  <h3 className="text-3xl font-bold mb-6" style={{ color:'#e1fdff', fontFamily:'Space Grotesk' }}>MOODMAP</h3>
+                  <p className="text-lg font-light leading-relaxed" style={{ color:'#b9cacb' }}>
+                    Our AI parses micro-patterns in sentiment to predict mental fatigue before it peaks. Real-time emotional scoring at your fingertips.
                   </p>
-                </motion.div>
-              </div>
-
-              {/* WellPulse Module */}
-              <motion.div 
-                initial={{ opacity: 0, y: 100 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.8 }}
-                className="md:col-span-12 glass-card rounded-[3rem] p-16 overflow-hidden relative group border-primary/5"
-              >
-                <div className="flex flex-col md:flex-row gap-20 items-center">
-                  <div className="flex-1 space-y-10 relative z-10">
-                    <span className="text-electric-lime font-label-caps tracking-[0.3em]">MODULE 03</span>
-                    <h3 className="text-display-lg-mobile font-bold text-primary tracking-tight">WELLPULSE</h3>
-                    <p className="text-body-lg font-light text-on-surface-variant leading-relaxed">
-                      For Institutions: High-fidelity wellbeing analytics that help counselors monitor campus-wide mental health patterns with radical privacy-first architecture.
-                    </p>
-                    <Link to="/auth">
-                      <button className="flex items-center gap-4 text-electric-lime font-bold uppercase tracking-[0.4em] text-xs">
-                        EXPLORE DASHBOARD
-                        <span className="material-symbols-outlined transition-transform duration-500 group-hover:translate-x-4">east</span>
-                      </button>
-                    </Link>
+                </div>
+                <div className="relative h-64 rounded-3xl border p-10 overflow-hidden transition-all"
+                  style={{ background:'rgba(53,52,54,0.2)', borderColor:'rgba(255,255,255,0.08)' }}>
+                  <div className="flex items-end gap-5 h-full">
+                    {[40,65,90,50,30].map((h,i) => (
+                      <div key={i} className="flex-1 rounded-t-2xl transition-all duration-1000 relative"
+                        style={{ height:`${h}%`, background: h===90 ? 'rgba(210,255,0,0.4)' : 'rgba(0,219,231,0.15)' }}>
+                        {h===90 && <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest" style={{ background:'#D2FF00', color:'#020202' }}>CRITICAL</div>}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1 w-full relative z-10">
-                    <div className="aspect-video glass-card rounded-2xl overflow-hidden border-primary/20 shadow-2xl group-hover:scale-105 transition-transform duration-700">
-                      <img alt="Analytics Dashboard" className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfO783Lzv2Jbg1DCZMELryPbJE-11bkXDRW4181kiy_feiDIMweTfu_MLEr6tpSMfsPrW4kL_FCGJsGn5qW5AZQx1F2dxgzmgfyMTFnasNfr9cwj1eVdS4TomCjdSB08zfj_nLdzzHgerm24ckiMN6FVH43npiAu96XSCN4OZC2KFVX9nKmFdK6UvzSFuG7UN8h5kzimUC0SXKsNe2GgBHBEDoBF4ELXm1e2S7AHGNYR5uomuytEcoCyjNfe9VATvTnFkBGhUZuUf5" />
+                </div>
+              </div>
+            </div>
+            {/* Right cards */}
+            <div className="md:col-span-5 flex flex-col gap-12">
+              <div className="glass-panel reveal-on-scroll rounded-[3rem] p-12 flex flex-col items-center justify-center text-center gap-8 flex-grow"
+                style={{ transitionDelay:'100ms' }}>
+                <div className="w-24 h-24 rounded-full flex items-center justify-center border" style={{ background:'rgba(182,0,248,0.1)', borderColor:'rgba(182,0,248,0.2)' }}>
+                  <span className="material-symbols-outlined text-5xl" style={{ color:'#ebb2ff' }}>query_stats</span>
+                </div>
+                <div>
+                  <h4 className="text-2xl font-bold mb-4" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>INSIGHTS</h4>
+                  <p className="font-light px-6" style={{ color:'#b9cacb' }}>Instant feedback on cognitive load and emotional trajectory.</p>
+                </div>
+              </div>
+              <div className="glass-panel reveal-on-scroll rounded-[3rem] p-12 flex flex-col gap-8 relative overflow-hidden"
+                style={{ transitionDelay:'200ms', borderColor:'rgba(0,219,231,0.1)' }}>
+                <span className="text-[11px] font-semibold tracking-[0.3em]" style={{ color:'#D2FF00' }}>MODULE 02</span>
+                <h3 className="text-2xl font-bold" style={{ color:'#e1fdff', fontFamily:'Space Grotesk' }}>CALMCAL</h3>
+                <p className="font-light" style={{ color:'#b9cacb' }}>Stress-aware calendar assistant visualizing your week as a thermal stress map.</p>
+              </div>
+            </div>
+            {/* WellPulse */}
+            <div className="md:col-span-12 glass-panel reveal-on-scroll rounded-[3rem] p-16 overflow-hidden relative" style={{ transitionDelay:'150ms' }}>
+              <div className="flex flex-col md:flex-row gap-20 items-center">
+                <div className="flex-1 space-y-10">
+                  <span className="text-[11px] font-semibold tracking-[0.3em]" style={{ color:'#D2FF00' }}>MODULE 03</span>
+                  <h3 className="text-4xl font-bold tracking-tight" style={{ color:'#e1fdff', fontFamily:'Space Grotesk' }}>WELLPULSE</h3>
+                  <p className="text-lg font-light leading-relaxed" style={{ color:'#b9cacb' }}>
+                    For Institutions: High-fidelity wellbeing analytics that help counselors monitor campus-wide mental health with privacy-first architecture.
+                  </p>
+                  <Link to="/auth">
+                    <button className="flex items-center gap-4 font-bold uppercase tracking-[0.4em] text-xs group" style={{ color:'#D2FF00' }}>
+                      EXPLORE DASHBOARD <span className="material-symbols-outlined transition-transform duration-500 group-hover:translate-x-4">east</span>
+                    </button>
+                  </Link>
+                </div>
+                <div className="flex-1 w-full">
+                  <div className="aspect-video glass-panel rounded-2xl flex items-center justify-center" style={{ borderColor:'rgba(0,219,231,0.2)' }}>
+                    <div className="text-center space-y-4">
+                      <span className="material-symbols-outlined text-6xl" style={{ color:'rgba(0,219,231,0.4)' }}>analytics</span>
+                      <p className="terminal-text text-xs" style={{ color:'#b9cacb' }}>WELLPULSE DASHBOARD PREVIEW</p>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Intelligence Core Section */}
-        <section className="py-20 px-gutter bg-[#020202]/95 backdrop-blur-2xl border-t border-glass-border relative overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-          <div className="ultra-wide space-y-16">
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center"
-            >
-              <h2 className="text-headline-md font-bold text-primary tracking-tight">INTELLIGENCE CORE</h2>
-              <p className="text-on-surface-variant font-light mt-4 text-sm tracking-widest font-label-caps">PROPRIETARY TECHNOLOGY STACK</p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { title: 'Neural Engine', desc: 'ADVANCED PATTERN RECOGNITION, COGNITIVE MODELING, REAL-TIME PROCESSING, DEEP LEARNING ARCHITECTURE', icon: 'memory', color: 'primary' },
-                { title: 'Predictive Mesh', desc: 'DISTRIBUTED SENSOR NETWORK, TOPOLOGICAL DATA ANALYSIS, PREDICTIVE ROUTING, SCALABLE ARCHITECTURE', icon: 'hub', color: 'electric-lime' },
-                { title: 'Sync Protocol', desc: 'BI-DIRECTIONAL TELEMETRY, END-TO-END ENCRYPTION, LOW LATENCY WEBSOCKETS, SEAMLESS INTEGRATION', icon: 'sync_alt', color: 'secondary' }
-              ].map((item, i) => (
-                <motion.div 
-                  key={item.title}
-                  initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.2 }}
-                  className="glass-card rounded-2xl overflow-hidden group"
-                >
-                  <div className="relative h-64 bg-surface-container-highest/10 flex items-center justify-center border-b border-glass-border overflow-hidden">
-                    <span className={`material-symbols-outlined text-[80px] text-${item.color}/60 group-hover:text-${item.color} group-hover:scale-110 transition-all duration-700 relative z-10`}>{item.icon}</span>
+      {/* Intelligence Core */}
+      <section className="sticky top-0 min-h-screen py-20 px-10 border-t z-30 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+        style={{ background:'rgba(2,2,2,0.95)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
+        <div className="ultra-wide space-y-16">
+          <div className="text-center reveal-on-scroll">
+            <h2 className="text-3xl font-bold tracking-tight" style={{ color:'#e1fdff', fontFamily:'Space Grotesk' }}>INTELLIGENCE CORE</h2>
+            <p className="mt-4 text-sm tracking-widest terminal-text" style={{ color:'#b9cacb' }}>PROPRIETARY TECHNOLOGY STACK</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon:'memory',   color:'#e1fdff',  title:'Neural Engine',     tags:['AI','CORE'],     desc:'ADVANCED PATTERN RECOGNITION, COGNITIVE MODELING, REAL-TIME PROCESSING' },
+              { icon:'hub',      color:'#D2FF00',  title:'Predictive Mesh',   tags:['INFRA','NETWORK'],desc:'DISTRIBUTED SENSOR NETWORK, TOPOLOGICAL DATA ANALYSIS, PREDICTIVE ROUTING' },
+              { icon:'sync_alt', color:'#ebb2ff',  title:'Sync Protocol',     tags:['PROTOCOL','API'], desc:'BI-DIRECTIONAL TELEMETRY, END-TO-END ENCRYPTION, LOW LATENCY WEBSOCKETS' },
+            ].map((card, i) => (
+              <div key={i} className="glass-panel reveal-on-scroll rounded-2xl overflow-hidden group" style={{ transitionDelay:`${i*100}ms` }}>
+                <div className="relative h-64 flex items-center justify-center border-b" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
+                  <span className="material-symbols-outlined transition-all duration-700 group-hover:scale-110 relative z-10"
+                    style={{ fontSize:80, color:`${card.color}99` }}>{card.icon}</span>
+                  <div className="absolute bottom-4 left-4 flex gap-2 z-10">
+                    {card.tags.map(t => (
+                      <span key={t} className="px-2 py-1 rounded text-[10px] font-semibold tracking-[0.2em] terminal-text"
+                        style={{ background:'rgba(42,42,43,0.8)', color:'#b9cacb' }}>{t}</span>
+                    ))}
                   </div>
-                  <div className="p-8 bg-surface-container-low/30 backdrop-blur-sm">
-                    <h3 className={`text-2xl font-bold text-${item.color} mb-4`}>{item.title}</h3>
-                    <p className="text-xs text-on-surface-variant tracking-[0.15em] font-label-caps leading-relaxed opacity-60">
-                      {item.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  <button className="absolute bottom-4 right-4 w-10 h-10 rounded flex items-center justify-center transition-colors duration-300 z-10"
+                    style={{ background:'#e5e2e3', color:'#131314' }}
+                    onMouseEnter={e => { e.currentTarget.style.background='#D2FF00'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background='#e5e2e3'; }}>
+                    <span className="material-symbols-outlined text-base">arrow_outward</span>
+                  </button>
+                </div>
+                <div className="p-8" style={{ background:'rgba(28,27,28,0.3)' }}>
+                  <h3 className="text-2xl font-bold mb-4" style={{ color:card.color, fontFamily:'Space Grotesk' }}>{card.title}</h3>
+                  <p className="text-xs tracking-[0.15em] terminal-text leading-relaxed opacity-60" style={{ color:'#b9cacb' }}>{card.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA Section */}
-        <section className="py-40 px-gutter text-center bg-[#020202] border-t border-glass-border relative overflow-hidden flex items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="ultra-wide relative z-10 space-y-16"
-          >
-            <h2 className="text-display-lg font-bold text-primary tracking-tighter">READY FOR <br /> FLOW STATE?</h2>
-            <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-              <input className="bg-surface-container-low/50 border border-glass-border rounded-full px-10 py-6 w-full focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface font-label-caps tracking-widest text-xs" placeholder="ENTER INSTITUTION EMAIL" type="email" />
-              <Link to="/auth">
-                <button className="px-12 py-6 bg-electric-lime text-background font-bold rounded-full hover:shadow-[0_0_40px_rgba(210,255,0,0.4)] transition-all tracking-[0.2em] text-xs whitespace-nowrap">
-                  GET EARLY ACCESS
-                </button>
-              </Link>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Footer */}
-        <footer className="w-full py-20 px-gutter border-t border-glass-border bg-[#020202] shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-          <div className="ultra-wide grid grid-cols-1 md:grid-cols-3 gap-16 items-start">
-            <div className="flex flex-col gap-6">
-              <span className="text-headline-md font-bold text-primary tracking-tighter">MINDFLOW</span>
-              <p className="text-label-caps text-on-surface-variant opacity-40 leading-relaxed">
-                © 2024 MINDFLOW ECOSYSTEM.<br />ELEVATE YOUR CONSCIOUSNESS.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-x-12 gap-y-6">
-              <a className="text-label-caps text-on-surface-variant hover:text-electric-lime transition-all tracking-[0.3em]" href="#">PRIVACY</a>
-              <a className="text-label-caps text-on-surface-variant hover:text-electric-lime transition-all tracking-[0.3em]" href="#">ETHICS AI</a>
-              <a className="text-label-caps text-on-surface-variant hover:text-electric-lime transition-all tracking-[0.3em]" href="#">RESEARCH</a>
-              <a className="text-label-caps text-on-surface-variant hover:text-electric-lime transition-all tracking-[0.3em]" href="#">CONTACT</a>
-            </div>
+      {/* CTA */}
+      <section className="sticky top-0 min-h-screen py-40 px-10 text-center border-t z-40 flex items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+        style={{ background:'#020202', borderColor:'rgba(255,255,255,0.08)' }}>
+        <div className="ultra-wide relative z-10 space-y-16 reveal-on-scroll">
+          <h2 className="font-bold tracking-tighter" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(40px,6vw,80px)', color:'#e1fdff' }}>
+            READY FOR<br/>FLOW STATE?
+          </h2>
+          <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+            <input className="rounded-full px-10 py-6 w-full outline-none terminal-text text-xs tracking-widest"
+              style={{ background:'rgba(28,27,28,0.5)', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e2e3' }}
+              placeholder="ENTER INSTITUTION EMAIL" type="email" />
+            <button className="px-12 py-6 rounded-full font-bold tracking-[0.2em] text-xs whitespace-nowrap transition-all hover:shadow-[0_0_40px_rgba(210,255,0,0.4)]"
+              style={{ background:'#D2FF00', color:'#020202' }}>
+              GET EARLY ACCESS
+            </button>
           </div>
-        </footer>
-      </main>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="sticky top-0 w-full py-20 px-10 border-t z-50 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+        style={{ background:'#020202', borderColor:'rgba(255,255,255,0.08)' }}>
+        <div className="ultra-wide grid grid-cols-1 md:grid-cols-3 gap-16 items-start">
+          <div className="flex flex-col gap-6">
+            <span className="font-bold tracking-tighter" style={{ fontFamily:'Space Grotesk', fontSize:28, color:'#e1fdff' }}>MINDFLOW</span>
+            <p className="text-[11px] tracking-[0.3em] terminal-text leading-relaxed opacity-40" style={{ color:'#b9cacb' }}>
+              © 2024 MINDFLOW ECOSYSTEM.<br/>ELEVATE YOUR CONSCIOUSNESS.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-x-12 gap-y-6">
+            {['PRIVACY','ETHICS AI','RESEARCH','CONTACT'].map(l => (
+              <a key={l} href="#" className="text-[11px] font-semibold tracking-[0.3em] terminal-text transition-colors hover:text-[#D2FF00]" style={{ color:'#b9cacb' }}>{l}</a>
+            ))}
+          </div>
+          <div className="flex md:justify-end gap-10">
+            {['language','share','terminal'].map(i => (
+              <span key={i} className="material-symbols-outlined cursor-pointer transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>{i}</span>
+            ))}
+          </div>
+        </div>
+      </footer>
+
+      {/* FAB */}
+      <Link to="/checkin">
+        <button className="fixed bottom-12 right-12 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50"
+          style={{ background:'#e1fdff', color:'#003548' }}>
+          <span className="material-symbols-outlined font-bold">bolt</span>
+        </button>
+      </Link>
+
+      <style>{`
+        @keyframes heroReveal { to { opacity:1; transform:translateY(0); } }
+        body { cursor: none; }
+      `}</style>
     </div>
   );
 }

@@ -1,15 +1,37 @@
 const { db, admin } = require('./firebase');
 
 /**
+ * Determine risk level based on score
+ */
+const getRiskLevel = (score) => {
+  if (score <= 30) return 'low';
+  if (score <= 55) return 'moderate';
+  if (score <= 79) return 'high';
+  return 'critical';
+};
+
+/**
  * Calculate and update the burnout score for a user
- * This is a simplified version of the burnout algorithm
  * @param {string} uid - User ID
  */
 const calculateBurnoutScore = async (uid) => {
   try {
-    console.log(`Calculating burnout score for user: ${uid}`);
+    console.log(`🚀 Refining burnout score for user: ${uid}`);
     
-    // Get last 7 check-ins to see trends
+    // 1. Get user's sleep goal and previous latest score
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) return;
+    const { sleepGoal = 8 } = userDoc.data();
+
+    const previousScoreSnapshot = await db.collection('burnout_scores')
+      .where('uid', '==', uid)
+      .orderBy('calculatedAt', 'desc')
+      .limit(1)
+      .get();
+    
+    const previousScore = previousScoreSnapshot.empty ? null : previousScoreSnapshot.docs[0].data().score;
+
+    // 2. Get last 7 check-ins
     const checkinsSnapshot = await db.collection('checkins')
       .where('uid', '==', uid)
       .orderBy('timestamp', 'desc')
@@ -20,36 +42,77 @@ const calculateBurnoutScore = async (uid) => {
 
     const checkins = checkinsSnapshot.docs.map(doc => doc.data());
     
-    // Calculate average metrics
-    const avgMood = checkins.reduce((acc, curr) => acc + curr.moodScore, 0) / checkins.length;
+    // 3. Calculate weighted components
     const avgStress = checkins.reduce((acc, curr) => acc + curr.stressLevel, 0) / checkins.length;
-    const avgSleep = checkins.reduce((acc, curr) => acc + curr.sleepHours, 0) / checkins.length;
     const avgWorkload = checkins.reduce((acc, curr) => acc + curr.workloadRating, 0) / checkins.length;
+    const avgMood = checkins.reduce((acc, curr) => acc + curr.moodScore, 0) / checkins.length;
+    const avgSleep = checkins.reduce((acc, curr) => acc + curr.sleepHours, 0) / checkins.length;
+
+    const sleepDeficit = Math.max(0, sleepGoal - avgSleep);
+    const moodInverse = 11 - avgMood; // Since mood is 1-10, inverse makes 1 (bad) -> 10 (risk)
 
     /**
-     * Burnout Score Algorithm (Mental Health Proxy)
-     * High stress, high workload, low mood, and low sleep increase the score.
-     * Scale: 0 to 100
+     * Refined Algorithm:
+     * Stress: 35%
+     * Workload: 30%
+     * Mood Inverse: 20%
+     * Sleep Deficit: 15% (scaled to 0-10 based on max likely deficit of 5 hours)
      */
-    let burnoutScore = (
-      (avgStress * 3) + 
-      (avgWorkload * 3) + 
-      ((11 - avgMood) * 2) + 
-      ((10 - avgSleep) * 2)
+    const sleepFactor = Math.min((sleepDeficit / 5) * 10, 10);
+    
+    let rawScore = (
+      (avgStress * 3.5) + 
+      (avgWorkload * 3.0) + 
+      (moodInverse * 2.0) + 
+      (sleepFactor * 1.5)
     );
 
-    // Normalize to 0-100 range
-    burnoutScore = Math.min(Math.max(burnoutScore, 0), 100);
+    // Final score scaled to 0-100
+    const finalScore = Math.round(Math.min(Math.max(rawScore * 1, 0), 100));
+    const riskLevel = getRiskLevel(finalScore);
 
-    // Update user profile with latest burnout score
+    // 4. Determine trend
+    let trend = 'stable';
+    if (previousScore !== null) {
+      if (finalScore > previousScore + 5) trend = 'worsening';
+      else if (finalScore < previousScore - 5) trend = 'improving';
+    }
+
+    // 5. Save score entry
+    const scoreData = {
+      uid,
+      score: finalScore,
+      riskLevel,
+      trend,
+      calculatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('burnout_scores').add(scoreData);
+
+    // 6. Update user profile for quick access
     await db.collection('users').doc(uid).update({
-      burnoutScore: Math.round(burnoutScore),
+      latestBurnoutScore: finalScore,
+      latestRiskLevel: riskLevel,
+      latestTrend: trend,
       lastAnalysisAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    console.log(`Burnout score for ${uid} updated to: ${Math.round(burnoutScore)}`);
+    // 7. Critical Alert Trigger
+    if (riskLevel === 'critical') {
+      await db.collection('alerts').add({
+        uid,
+        type: 'burnout_critical',
+        message: 'Student has reached a critical burnout risk level. Intervention recommended.',
+        score: finalScore,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'pending'
+      });
+      console.log(`⚠️ CRITICAL burnout alert generated for user: ${uid}`);
+    }
+
+    console.log(`✅ Burnout calculation complete: ${finalScore} (${riskLevel})`);
   } catch (error) {
-    console.error('Error calculating burnout score:', error);
+    console.error('❌ Error in burnout scoring engine:', error);
   }
 };
 

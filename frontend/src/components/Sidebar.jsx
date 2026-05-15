@@ -5,15 +5,15 @@ const NAV_STUDENT = [
   { icon: 'grid_view',           label: 'Dashboard',  to: '/dashboard' },
   { icon: 'radio_button_checked',label: 'MoodMap',    to: '/checkin' },
   { icon: 'calendar_today',      label: 'CalmCal',    to: '/calmcal' },
-  { icon: 'auto_stories',        label: 'Resources',  to: '#' },
-  { icon: 'group',               label: 'Community',  to: '#' },
+  { icon: 'auto_stories',        label: 'Resources',  to: '/resources' },
+  { icon: 'group',               label: 'Community',  to: '/community' },
 ];
 
 const NAV_COUNSELOR = [
   { icon: 'grid_view',  label: 'DASHBOARD', to: '/wellpulse' },
-  { icon: 'analytics',  label: 'MOODMAP',   to: '#' },
+  { icon: 'analytics',  label: 'MOODMAP',   to: '/checkin' },
   { icon: 'insights',   label: 'CALMCAL',   to: '/calmcal' },
-  { icon: 'database',   label: 'RESOURCES', to: '#' },
+  { icon: 'database',   label: 'RESOURCES', to: '/resources' },
 ];
 
 export default function Sidebar({ active }) {

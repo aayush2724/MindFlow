@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard';
 import CheckIn from './pages/CheckIn';
 import CalmCal from './pages/CalmCal';
 import WellPulse from './pages/WellPulse';
+import Resources from './pages/Resources';
+import Community from './pages/Community';
 import SmoothScroll from './components/SmoothScroll';
 import CustomCursor from './components/CustomCursor';
 import CinematicBackground from './components/CinematicBackground';
@@ -60,7 +62,9 @@ function AppRoutes() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/checkin" element={<ProtectedRoute><CheckIn /></ProtectedRoute>} />
           <Route path="/calmcal" element={<ProtectedRoute><CalmCal /></ProtectedRoute>} />
-          <Route path="/wellpulse" element={<ProtectedRoute><WellPulse /></ProtectedRoute>} />
+          <Route path="/wellpulse" element={<ProtectedRoute allowCounselor><WellPulse /></ProtectedRoute>} />
+          <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+          <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

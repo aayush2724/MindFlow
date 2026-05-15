@@ -65,10 +65,13 @@ export default function Landing() {
       <nav id="main-nav" className="fixed top-0 w-full z-50 flex justify-between items-center px-10 py-6 transition-all duration-500">
         <span style={{ fontFamily:'Space Grotesk', fontWeight:700, fontSize:28, letterSpacing:'-0.04em', color:'#e1fdff' }}>MINDFLOW</span>
         <div className="hidden md:flex items-center gap-12">
-          {['DASHBOARD','RESOURCES','COMMUNITY'].map((l,i) => (
-            <Link key={l} to={i===0?'/dashboard':'#'} className="text-[11px] font-semibold tracking-[0.3em] transition-colors duration-300"
-              style={{ color: i===0 ? '#e1fdff' : '#b9cacb' }}>{l}</Link>
-          ))}
+          {['DASHBOARD','RESOURCES','COMMUNITY'].map((l,i) => {
+            const dest = i === 0 ? '/dashboard' : (i === 1 ? '/resources' : '/community');
+            return (
+              <Link key={l} to={dest} className="text-[11px] font-semibold tracking-[0.3em] transition-colors duration-300"
+                style={{ color: i===0 ? '#e1fdff' : '#b9cacb' }}>{l}</Link>
+            );
+          })}
         </div>
         <Link to="/auth">
           <button className="px-8 py-3 rounded-full font-bold text-xs tracking-[0.2em] transition-all hover:scale-105"

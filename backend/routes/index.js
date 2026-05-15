@@ -7,6 +7,7 @@ const burnoutRoutes = require('./burnoutRoutes');
 const alertRoutes = require('./alertRoutes');
 const calendarRoutes = require('./calendarRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
+const insightRoutes = require('./insightRoutes');
 
 // Public routes
 router.use('/health', healthRoutes);
@@ -18,5 +19,6 @@ router.use('/burnout', burnoutRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/calendar', calendarRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/insights', insightRoutes);
 
 module.exports = router;

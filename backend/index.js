@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const routes = require('./routes');
-const errorHandler = require('./middleware/error');
+const errorHandler = require('./middleware/errorHandler');
 
 // Load environment variables
 dotenv.config();

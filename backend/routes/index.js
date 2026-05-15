@@ -4,6 +4,7 @@ const healthRoutes = require('./health');
 const userRoutes = require('./userRoutes');
 const checkinRoutes = require('./checkinRoutes');
 const burnoutRoutes = require('./burnoutRoutes');
+const alertRoutes = require('./alertRoutes');
 
 // Public routes
 router.use('/health', healthRoutes);
@@ -12,5 +13,6 @@ router.use('/health', healthRoutes);
 router.use('/users', userRoutes);
 router.use('/checkins', checkinRoutes);
 router.use('/burnout', burnoutRoutes);
+router.use('/alerts', alertRoutes);
 
 module.exports = router;

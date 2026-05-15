@@ -65,14 +65,14 @@ export default function Community() {
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                      <span className="material-symbols-outlined text-[16px] text-white/50">incognito</span>
+                      <span className="material-symbols-outlined text-[16px] text-white/50">visibility_off</span>
                     </div>
                     <span className="text-xs font-bold tracking-widest text-white/40 uppercase">Broadcast Anonymously</span>
                   </div>
                   <textarea 
                     value={newPost} onChange={(e) => setNewPost(e.target.value)}
                     placeholder="Share your current mental state or ask for support..."
-                    className="w-full bg-black/20 border border-white/5 rounded-xl p-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#c084fc]/50 resize-none min-h-[100px] transition-colors"
+                    className="w-full bg-black/20 border border-white/5 rounded-xl p-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-purple-400/50 resize-none min-h-[100px] transition-colors"
                   />
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex gap-2">
@@ -83,7 +83,7 @@ export default function Community() {
                         <span className="material-symbols-outlined text-[20px]">sell</span>
                       </button>
                     </div>
-                    <button className="px-6 py-2 rounded-lg text-xs font-bold tracking-widest bg-[#c084fc] text-black hover:scale-105 transition-transform" style={{ boxShadow:'0 0 20px rgba(192,132,252,0.2)' }}>
+                    <button className="px-6 py-2 rounded-lg text-xs font-bold tracking-widest text-black hover:scale-105 transition-transform" style={{ background: '#c084fc', boxShadow:'0 0 20px rgba(192,132,252,0.2)' }}>
                       TRANSMIT
                     </button>
                   </div>

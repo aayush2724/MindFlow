@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react';
+import api from '../lib/api';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
-import { fetchHeatmapData } from '../lib/firestore';
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 export default function CalmCal() {
   const { user } = useAuth();
   const [heatmap, setHeatmap] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchHeatmapData(user?.uid || 'demo', 7).then(setHeatmap).catch(() => {});
+    async function load() {
+      try {
+        const { data } = await api.get('/calendar/me');
+        setHeatmap(data);
+      } catch (err) {
+        console.error('Failed to fetch calendar heatmap:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, [user]);
 
   // Build week display
@@ -37,16 +48,6 @@ export default function CalmCal() {
 
   return (
     <div className="obsidian-grid" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      {/* Space background */}
-      <div aria-hidden="true" style={{ position:'fixed', inset:0, zIndex:-2, background:'radial-gradient(circle at 50% 50%, #0c141d 0%, #080808 100%)', overflow:'hidden' }}>
-        <div className="nebula nebula-cyan" />
-        <div className="nebula nebula-lime" />
-        <div className="star-layer stars-small" id="stars-p1"
-          style={{ position:'absolute', top:'-10%', left:'-10%', width:'120%', height:'120%', backgroundImage:'radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 80px 120px, #fff, rgba(0,0,0,0))', backgroundSize:'200px 200px', opacity:0.5 }} />
-        <div className="star-layer" id="stars-p2"
-          style={{ position:'absolute', top:'-10%', left:'-10%', width:'120%', height:'120%', backgroundImage:'radial-gradient(2px 2px at 100px 100px, #e1fdff, rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 400px 400px, #D2FF00, rgba(0,0,0,0))', backgroundSize:'600px 600px', opacity:0.3 }} />
-      </div>
-
       <Sidebar active="calmcal" />
 
       {/* Top Nav */}

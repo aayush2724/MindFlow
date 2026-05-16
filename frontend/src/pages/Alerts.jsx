@@ -1,42 +1,56 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../lib/api';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 
-const MOCK_ALERTS = [
-  { id:'1', pseudonym:'NODE_A7F2', riskLevel:'critical', burnoutScore:87, triggeredAt:'2024-01-15 09:32' },
-  { id:'2', pseudonym:'NODE_B3K9', riskLevel:'critical', burnoutScore:82, triggeredAt:'2024-01-15 08:14' },
-  { id:'3', pseudonym:'NODE_C1M4', riskLevel:'high',     burnoutScore:71, triggeredAt:'2024-01-15 07:55' },
-  { id:'4', pseudonym:'NODE_D9P2', riskLevel:'high',     burnoutScore:68, triggeredAt:'2024-01-14 22:10' },
-  { id:'5', pseudonym:'NODE_E5R7', riskLevel:'high',     burnoutScore:63, triggeredAt:'2024-01-14 20:44' },
-];
-
 export default function Alerts() {
+  const [alerts, setAlerts] = useState([]);
   const [acknowledged, setAcknowledged] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAcknowledge = (id) => {
-    setAcknowledged(prev => [...prev, id]);
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await api.get('/alerts');
+        setAlerts(data);
+        // Track already acknowledged alerts from the backend status
+        const acked = data.filter(a => a.status === 'acknowledged').map(a => a.id);
+        setAcknowledged(acked);
+      } catch (err) {
+        console.error('Failed to fetch alerts:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+  const handleAcknowledge = async (id) => {
+    try {
+      await api.put(`/alerts/${id}/acknowledge`);
+      setAcknowledged(prev => [...prev, id]);
+    } catch (err) {
+      console.error('Failed to acknowledge alert:', err);
+    }
   };
 
-  const handleAcknowledgeAll = () => {
-    setAcknowledged(MOCK_ALERTS.map(a => a.id));
+  const handleAcknowledgeAll = async () => {
+    try {
+      const pending = alerts.filter(a => !acknowledged.includes(a.id));
+      await Promise.all(pending.map(a => api.put(`/alerts/${a.id}/acknowledge`)));
+      setAcknowledged(alerts.map(a => a.id));
+    } catch (err) {
+      console.error('Failed to acknowledge all alerts:', err);
+    }
   };
 
-  const criticalCount = MOCK_ALERTS.filter(a => a.riskLevel === 'critical').length;
-  const highCount = MOCK_ALERTS.filter(a => a.riskLevel === 'high').length;
-  const pendingCount = MOCK_ALERTS.length - acknowledged.length;
+  const criticalCount = alerts.filter(a => a.riskLevel === 'critical').length;
+  const highCount = alerts.filter(a => a.riskLevel === 'high').length;
+  const pendingCount = alerts.length - acknowledged.length;
 
-  const isAllCleared = acknowledged.length === MOCK_ALERTS.length;
+  const isAllCleared = acknowledged.length === alerts.length && alerts.length > 0;
 
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      {/* Black Hole BG */}
-      <div style={{ position:'fixed', inset:0, zIndex:-1, background:'#020202', overflow:'hidden' }}>
-        <div className="accretion-disk-layer" />
-        <div className="accretion-disk-inner-wp" />
-        <div className="event-horizon" />
-        <div className="gravitational-lensing-wp" style={{ zIndex:2 }} />
-      </div>
-
       <Sidebar active="alerts" />
 
       {/* Top Nav */}
@@ -118,7 +132,7 @@ export default function Alerts() {
 
           {/* Section 2: Alerts Feed */}
           <div className="space-y-4 mb-12">
-            {MOCK_ALERTS.map((alert, i) => {
+            {alerts.map((alert, i) => {
               const isAck = acknowledged.includes(alert.id);
               const riskColor = alert.riskLevel === 'critical' ? '#ffb4ab' : '#D2FF00';
               const riskLabel = alert.riskLevel === 'critical' ? 'CRITICAL' : 'HIGH_RISK';

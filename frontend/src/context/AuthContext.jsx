@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import api from '../lib/api';
 import { DEMO_MODE, auth, googleProvider } from '../lib/firebase';
 import {
   onAuthStateChanged,
@@ -52,9 +53,18 @@ export function AuthProvider({ children }) {
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const detectedRole = getRoleFromEmail(firebaseUser.email);
-        setUser({ ...firebaseUser, role: detectedRole });
-        setRole(detectedRole);
+        try {
+          // In real mode, we fetch the extended profile from our backend
+          const { data: profile } = await api.get('/users/me');
+          setUser({ ...firebaseUser, ...profile });
+          setRole(profile.role || 'student');
+        } catch (err) {
+          console.error('Failed to fetch user profile from backend:', err);
+          // Fallback to role from email if backend profile fails
+          const detectedRole = getRoleFromEmail(firebaseUser.email);
+          setUser({ ...firebaseUser, role: detectedRole });
+          setRole(detectedRole);
+        }
       } else {
         setUser(null);
       }

@@ -15,7 +15,6 @@ import Alerts from './pages/Alerts';
 import Departments from './pages/Departments';
 import SmoothScroll from './components/SmoothScroll';
 import CustomCursor from './components/CustomCursor';
-import CinematicBackground from './components/CinematicBackground';
 
 function ProtectedRoute({ children, onlyRole = null }) {
   const { user, loading, role } = useAuth();
@@ -66,11 +65,10 @@ function AppRoutes() {
   const { user, role } = useAuth();
   // Only Auth and Onboarding use the old global nav/bg system
   const showNav = ['/onboarding', '/checkin', '/auth'].includes(location.pathname);
-  const showGlobalBackground = location.pathname !== '/';
 
   return (
     <SmoothScroll>
-      {/* Cinematic Video Background */}
+      {/* Global Background (Video + Precise Glows) */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: -2 }}>
         <video
           autoPlay
@@ -78,20 +76,53 @@ function AppRoutes() {
           muted
           playsInline
           className="w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.15 }}
+          style={{ opacity: 0.18 }}
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"
         />
-        {/* Dark overlay to keep text readable */}
+        
+        {/* Artistic Glow Layers */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Main Cyan Core Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] rounded-full" 
+            style={{ 
+              background: 'radial-gradient(circle, rgba(0,219,231,0.5) 0%, transparent 70%)', 
+              filter: 'blur(120px)',
+              mixBlendMode: 'screen'
+            }} />
+          
+          {/* Top Left Cyan Glow */}
+          <div className="absolute top-0 left-0 w-[800px] h-[800px] rounded-full" 
+            style={{ 
+              background: 'radial-gradient(circle, rgba(0,219,231,0.15) 0%, transparent 70%)', 
+              filter: 'blur(100px)',
+              mixBlendMode: 'screen'
+            }} />
+          
+          {/* Subtle Lime Peripheral Glow */}
+          <div className="absolute top-[15%] right-[10%] w-[900px] h-[900px] rounded-full" 
+            style={{ 
+              background: 'radial-gradient(circle, rgba(210,255,0,0.2) 0%, transparent 70%)', 
+              filter: 'blur(140px)'
+            }} />
+
+          {/* CRISP Circular Border (The Hero's Ring) */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[820px] h-[820px] rounded-full border border-white/10" 
+            style={{ 
+              boxShadow: '0 0 100px rgba(0,219,231,0.2), inset 0 0 100px rgba(0,219,231,0.2)',
+              background: 'rgba(3,3,5,0.02)'
+            }} />
+        </div>
+
+        {/* Deep Vignette Overlay (Lightened) */}
         <div
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse at 50% 50%, rgba(0,219,231,0.12) 0%, rgba(3,3,5,0.75) 70%)',
+            background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(3,3,5,0.6) 100%)',
           }}
         />
+        <div className="absolute inset-0 bg-[#030305]/20" />
       </div>
 
-      <div className="global-bh-glow" />
-      {showGlobalBackground && <CinematicBackground />}
       <CustomCursor />
       {showNav && <Nav />}
       <div style={{ display: 'grid' }}>

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import api from '../lib/api';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
@@ -16,26 +18,43 @@ const BARS = [
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP'];
 
 export default function WellPulse() {
+  const [stats, setStats] = useState({
+    campusAverageBurnout: 0,
+    highRiskCount: 0,
+    highRiskPercentage: 0,
+    checkInRate: 0,
+    totalStudents: 0
+  });
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [statsRes, deptsRes] = await Promise.all([
+          api.get('/analytics/overview'),
+          api.get('/analytics/departments'),
+        ]);
+        setStats(statsRes.data);
+        setDepartments(deptsRes.data);
+      } catch (err) {
+        console.error('Failed to fetch analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const kpis = [
+    { label:'AVG_BURNOUT_METRIC', val:`${stats.campusAverageBurnout}%`, valColor:'#D2FF00', bar:stats.campusAverageBurnout, barColor:'#D2FF00' },
+    { label:'HIGH_RISK_ALERTS',   val:stats.highRiskCount.toString(),   sub:'CRITICAL_OVERFLOW', valColor:'#ffb4ab', sub_anim:true },
+    { label:'CHECK_IN_RATE',      val:`${stats.checkInRate}%`, sub:'⚡ ACTIVE', valColor:'#00dbe7', bar:stats.checkInRate, barColor:'#00dbe7' },
+    { label:'TOTAL_NODES',        val:stats.totalStudents.toLocaleString(),  sub:'Active_State', valColor:'#e1fdff' },
+  ];
+
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      {/* Black Hole BG */}
-      <div style={{ position:'fixed', inset:0, zIndex:-1, background:'transparent', overflow:'hidden' }}>
-        <div className="accretion-disk-layer" />
-        <div className="accretion-disk-inner-wp" />
-        <div className="event-horizon" />
-        <div className="gravitational-lensing-wp" style={{ zIndex:2 }} />
-      </div>
-
-      {/* Decorative accents */}
-      <div style={{ position:'fixed', top:'25%', left:40, zIndex:10, opacity:0.4, pointerEvents:'none' }}>
-        <span className="terminal-text text-[8px]" style={{ color:'rgba(0,219,231,0.5)' }}>[ SINGULARITY_PROXIMITY_ALERT ]</span>
-        <div className="h-px w-12 mt-1" style={{ background:'rgba(0,219,231,0.2)' }} />
-      </div>
-      <div style={{ position:'fixed', bottom:'33%', right:48, zIndex:10, opacity:0.4, textAlign:'right', pointerEvents:'none' }}>
-        <div className="h-px w-16 ml-auto mb-1" style={{ background:'rgba(210,255,0,0.2)' }} />
-        <span className="terminal-text text-[8px]" style={{ color:'rgba(210,255,0,0.5)' }}>WARP_FIELD_STABLE</span>
-      </div>
-
       <Sidebar active="wellpulse" />
 
       {/* Top Nav */}
@@ -98,12 +117,7 @@ export default function WellPulse() {
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[
-                { label:'AVG_BURNOUT_METRIC', val:'42.8%', sub:'+4.2 ▲', valColor:'#D2FF00', bar:42, barColor:'#D2FF00' },
-                { label:'HIGH_RISK_ALERTS',   val:'128',   sub:'CRITICAL_OVERFLOW', valColor:'#ffb4ab', sub_anim:true },
-                { label:'CALM_FLOW_SESSIONS', val:'3,492', sub:'⚡ ACTIVE', valColor:'#00dbe7', bar:null },
-                { label:'ENGAGEMENT_INDEX',   val:'88.5',  sub:'Optimal_State', valColor:'#e1fdff' },
-              ].map((kpi, i) => (
+              {kpis.map((kpi, i) => (
                 <div key={i} className="rounded-2xl p-6 flex flex-col gap-2 border transition-all hover:border-[rgba(0,219,231,0.4)]"
                   style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
                   <span className="text-[10px] terminal-text tracking-widest uppercase" style={{ color:'#b9cacb' }}>{kpi.label}</span>
@@ -260,19 +274,21 @@ export default function WellPulse() {
                     </tr>
                   </thead>
                   <tbody>
-                    {DEPTS.map((d, i) => (
+                    {departments.map((d, i) => (
                       <tr key={i} className="transition-colors hover:bg-[rgba(0,219,231,0.03)]" style={{ borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                        <td className="px-8 py-6 font-bold text-sm terminal-text" style={{ color:'#e5e2e3' }}>{d.name}</td>
-                        <td className="px-8 py-6 text-sm terminal-text" style={{ color:'#b9cacb' }}>{d.nodes}</td>
+                        <td className="px-8 py-6 font-bold text-sm terminal-text" style={{ color:'#e5e2e3' }}>{d.department}</td>
+                        <td className="px-8 py-6 text-sm terminal-text" style={{ color:'#b9cacb' }}>{d.studentCount} NODES</td>
                         <td className="px-8 py-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full" style={{ background:d.dotColor, boxShadow:`0 0 8px ${d.dotColor}` }} />
-                            <span className="terminal-text text-sm" style={{ color:'#e5e2e3' }}>{d.mood}</span>
+                            <div className="w-2 h-2 rounded-full" style={{ background: d.avgBurnoutScore > 60 ? '#ffb4ab' : '#00dbe7', boxShadow:`0 0 8px ${d.avgBurnoutScore > 60 ? '#ffb4ab' : '#00dbe7'}` }} />
+                            <span className="terminal-text text-sm" style={{ color:'#e5e2e3' }}>{d.avgBurnoutScore} / 100</span>
                           </div>
                         </td>
                         <td className="px-8 py-6">
                           <span className="px-3 py-1 rounded border text-[10px] terminal-text font-bold"
-                            style={{ background:`${d.riskColor}1A`, color:d.riskColor, borderColor:`${d.riskColor}33` }}>{d.risk}</span>
+                            style={{ background: d.highRiskCount > 5 ? '#ffb4ab1A' : '#00dbe71A', color: d.highRiskCount > 5 ? '#ffb4ab' : '#00dbe7', borderColor: d.highRiskCount > 5 ? '#ffb4ab33' : '#00dbe733' }}>
+                            {d.highRiskCount > 5 ? 'CRITICAL' : 'STABLE'}
+                          </span>
                         </td>
                         <td className="px-8 py-6">
                           <button className="text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-colors hover:text-[#D2FF00]" style={{ color:'#e1fdff' }}>FETCH_DETAILS</button>

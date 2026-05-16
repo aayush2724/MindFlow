@@ -1,24 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../lib/api';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-
-const MOCK_DEPARTMENTS = [
-  { name:'School of Engineering', students:2450, avgBurnout:72, checkInRate:68, riskLevel:'critical', stressors:['DEADLINES','WORKLOAD','SLEEP_DEFICIT'] },
-  { name:'Faculty of Fine Arts',  students:1120, avgBurnout:28, checkInRate:91, riskLevel:'low',      stressors:['CREATIVE_BLOCKS'] },
-  { name:'Medical Sciences',      students:1890, avgBurnout:58, checkInRate:74, riskLevel:'moderate', stressors:['EXAM_PRESSURE','CLINICAL_HOURS'] },
-  { name:'Business School',       students:2100, avgBurnout:45, checkInRate:80, riskLevel:'moderate', stressors:['PRESENTATIONS','GROUP_PROJECTS'] },
-  { name:'Faculty of Law',        students:980,  avgBurnout:79, checkInRate:61, riskLevel:'high',     stressors:['CASE_LOADS','MOOT_PREP','DEADLINES'] },
-  { name:'School of Sciences',    students:1560, avgBurnout:41, checkInRate:83, riskLevel:'low',      stressors:['LAB_REPORTS','RESEARCH'] },
-];
-
-const TRENDS = {
-  'School of Engineering': [55,60,65,72,78,74,72],
-  'Faculty of Fine Arts':  [30,28,25,22,28,30,28],
-  'Medical Sciences':      [50,52,58,60,55,57,58],
-  'Business School':       [40,42,45,43,44,46,45],
-  'Faculty of Law':        [65,70,75,78,80,79,79],
-  'School of Sciences':    [38,40,42,38,41,40,41],
-};
 
 const RISK_MAP = {
   critical: { label: 'CRITICAL', color: '#ffb4ab' },
@@ -28,20 +11,43 @@ const RISK_MAP = {
 };
 
 export default function Departments() {
-  const [selectedDept, setSelectedDept] = useState('School of Engineering');
+  const [departments, setDepartments] = useState([]);
+  const [stats, setStats] = useState({ campusAverageBurnout: 0, highRiskCount: 0, checkInRate: 0, totalStudents: 0 });
+  const [selectedDept, setSelectedDept] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [deptsRes, statsRes] = await Promise.all([
+          api.get('/analytics/departments'),
+          api.get('/analytics/overview'),
+        ]);
+        setDepartments(deptsRes.data);
+        setStats(statsRes.data);
+        if (deptsRes.data.length > 0) {
+          setSelectedDept(deptsRes.data[0].department);
+        }
+      } catch (err) {
+        console.error('Failed to fetch department analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   const getBarColor = (val) => val > 70 ? '#ffb4ab' : val > 45 ? '#D2FF00' : '#00dbe7';
+  
+  const kpis = [
+    { label:'AVG_BURNOUT_SCORE', val:`${stats.campusAverageBurnout}%`, valColor:'#D2FF00' },
+    { label:'HIGH_RISK_DEPARTMENTS', val:stats.highRiskCount.toString(), valColor:'#ffb4ab', anim:stats.highRiskCount > 0 ? 'animate-pulse' : '' },
+    { label:'CHECK_IN_RATE', val:`${stats.checkInRate}%`, valColor:'#00dbe7' },
+    { label:'TOTAL_DEPARTMENTS', val:departments.length.toString(), valColor:'#e1fdff' },
+  ];
 
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      {/* Black Hole BG */}
-      <div style={{ position:'fixed', inset:0, zIndex:-1, background:'#020202', overflow:'hidden' }}>
-        <div className="accretion-disk-layer" />
-        <div className="accretion-disk-inner-wp" />
-        <div className="event-horizon" />
-        <div className="gravitational-lensing-wp" style={{ zIndex:2 }} />
-      </div>
-
       <Sidebar active="departments" />
 
       {/* Top Nav */}
@@ -103,12 +109,7 @@ export default function Departments() {
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[
-                { label:'AVG_BURNOUT_SCORE', val:'54.2%', valColor:'#D2FF00' },
-                { label:'HIGH_RISK_DEPARTMENTS', val:'2', valColor:'#ffb4ab', anim:'animate-pulse' },
-                { label:'CHECK_IN_RATE', val:'76.4%', valColor:'#00dbe7' },
-                { label:'TOTAL_DEPARTMENTS', val:'6', valColor:'#e1fdff' },
-              ].map((kpi, i) => (
+              {kpis.map((kpi, i) => (
                 <div key={i} className="rounded-2xl p-6 flex flex-col gap-2 border transition-all hover:border-[rgba(0,219,231,0.4)]"
                   style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
                   <span className="text-[10px] terminal-text tracking-widest uppercase" style={{ color:'#b9cacb' }}>{kpi.label}</span>
@@ -122,15 +123,16 @@ export default function Departments() {
 
           {/* Section 2: Department Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {MOCK_DEPARTMENTS.map((dept, i) => {
-              const risk = RISK_MAP[dept.riskLevel];
+            {departments.map((dept, i) => {
+              const riskKey = dept.avgBurnoutScore > 75 ? 'critical' : dept.avgBurnoutScore > 60 ? 'high' : dept.avgBurnoutScore > 40 ? 'moderate' : 'low';
+              const risk = RISK_MAP[riskKey];
               return (
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }} className="rounded-3xl p-8 flex flex-col gap-6 border transition-all hover:border-[rgba(0,219,231,0.4)]"
                   style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold text-xl mb-1" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>{dept.name}</h3>
-                      <span className="text-[10px] terminal-text" style={{ color:'#b9cacb' }}>{dept.students.toLocaleString()}_NODES</span>
+                      <h3 className="font-semibold text-xl mb-1" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>{dept.department}</h3>
+                      <span className="text-[10px] terminal-text" style={{ color:'#b9cacb' }}>{dept.studentCount?.toLocaleString()}_NODES</span>
                     </div>
                     <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text"
                       style={{ background:`${risk.color}1A`, color:risk.color, borderColor:`${risk.color}33` }}>{risk.label}</span>
@@ -140,26 +142,26 @@ export default function Departments() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
                         <span>AVG_BURNOUT</span>
-                        <span style={{ color: getBarColor(dept.avgBurnout) }}>{dept.avgBurnout}%</span>
+                        <span style={{ color: getBarColor(dept.avgBurnoutScore) }}>{dept.avgBurnoutScore}%</span>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
-                        <div className="h-full chart-bar rounded-full" style={{ width:`${dept.avgBurnout}%`, background: getBarColor(dept.avgBurnout) }} />
+                        <div className="h-full chart-bar rounded-full" style={{ width:`${dept.avgBurnoutScore}%`, background: getBarColor(dept.avgBurnoutScore) }} />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
                         <span>CHECK_IN_RATE</span>
-                        <span style={{ color:'#00dbe7' }}>{dept.checkInRate}%</span>
+                        <span style={{ color:'#00dbe7' }}>{Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%</span>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
-                        <div className="h-full chart-bar rounded-full" style={{ width:`${dept.checkInRate}%`, background:'#00dbe7' }} />
+                        <div className="h-full chart-bar rounded-full" style={{ width:`${Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%`, background:'#00dbe7' }} />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {dept.stressors.map(s => (
+                    {['SYSTEM_SYNC','ACTIVE_MONITORING'].map(s => (
                       <span key={s} className="px-2 py-0.5 rounded border text-[8px] terminal-text font-bold"
                         style={{ color:'#b9cacb', borderColor:'rgba(255,255,255,0.1)' }}>[ {s} ]</span>
                     ))}
@@ -183,11 +185,11 @@ export default function Departments() {
                   <p className="text-sm terminal-text tracking-tighter" style={{ color:'#b9cacb' }}>HISTORICAL_STRESS_FLOW v4.2</p>
                 </div>
                 <div className="flex flex-wrap gap-2 rounded-xl p-2 border" style={{ background:'rgba(14,14,15,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
-                  {Object.keys(TRENDS).map((dept) => (
-                    <button key={dept} onClick={() => setSelectedDept(dept)}
+                  {departments.map((dept) => (
+                    <button key={dept.department} onClick={() => setSelectedDept(dept.department)}
                       className="px-3 py-1.5 rounded-lg text-[9px] terminal-text font-bold transition-all"
-                      style={{ background: selectedDept === dept ? 'rgba(0,219,231,0.1)' : 'transparent', color: selectedDept === dept ? '#e1fdff' : '#b9cacb' }}>
-                      {dept.split(' ').map(w => w[0]).join('')} {/* Abbreviated name for pill buttons */}
+                      style={{ background: selectedDept === dept.department ? 'rgba(0,219,231,0.1)' : 'transparent', color: selectedDept === dept.department ? '#e1fdff' : '#b9cacb' }}>
+                      {dept.department.split(' ').map(w => w[0]).join('')}
                     </button>
                   ))}
                   <select 
@@ -195,7 +197,7 @@ export default function Departments() {
                     onChange={(e) => setSelectedDept(e.target.value)}
                     className="bg-transparent border-none outline-none terminal-text text-[10px] ml-2 px-2 cursor-pointer"
                     style={{ color:'#e1fdff' }}>
-                    {Object.keys(TRENDS).map(d => <option key={d} value={d} className="bg-[#131314]">{d}</option>)}
+                    {departments.map(d => <option key={d.department} value={d.department} className="bg-[#131314]">{d.department}</option>)}
                   </select>
                 </div>
               </div>
@@ -203,7 +205,8 @@ export default function Departments() {
                 <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
                   {[0,1,2,3,4].map(i => <div key={i} className="border-t w-full" style={{ borderColor:'rgba(255,255,255,0.05)' }} />)}
                 </div>
-                {TRENDS[selectedDept].map((val, i) => (
+                {/* Mocking trend for selected dept as backend might not have history per dept yet */}
+                {[45,52,58,62,60,55,58].map((val, i) => (
                   <div key={i} className="w-[10%] rounded-t border-x border-t chart-bar relative"
                     style={{
                       height:`${val}%`,

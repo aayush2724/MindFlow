@@ -82,14 +82,7 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center text-center px-10 overflow-hidden z-10">
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="parallax-layer absolute inset-0 opacity-20" data-depth="0.1">
-            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full" style={{ background:'rgba(0,219,231,0.06)', filter:'blur(120px)' }} />
-          </div>
-          <div className="parallax-layer absolute inset-0" data-depth="0.3">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-white/5" />
-          </div>
-        </div>
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" />
         <div className="relative z-10 ultra-wide space-y-10" style={{ animation:'heroReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards', opacity:0 }}>
           <h1 style={{ fontFamily:'Space Grotesk', fontWeight:700, fontSize:'clamp(48px,7vw,80px)', lineHeight:1.05, letterSpacing:'-0.04em', color:'#e1fdff' }}>
             PREDICT <span style={{ fontStyle:'italic', fontWeight:300 }}>BURNOUT.</span><br />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, CheckCircle, ArrowRight, RotateCcw } from 'lucide-react';
@@ -7,7 +8,6 @@ import MoodSlider from '../components/MoodSlider';
 import BurnoutGauge from '../components/BurnoutGauge';
 import StressOrb from '../components/StressOrb';
 import { calculateBurnoutScore } from '../lib/burnoutEngine';
-import { saveCheckin } from '../lib/firestore';
 import { useAuth } from '../context/AuthContext';
 
 const PHASES = ['checkin', 'result'];
@@ -26,12 +26,28 @@ export default function CheckIn() {
     setLoading(true);
     try {
       const res = calculateBurnoutScore(values);
-      await saveCheckin(user?.uid || 'demo', values);
+      
+      // Map to backend schema
+      const payload = {
+        moodScore: values.mood,
+        sleepHours: values.sleep,
+        workloadRating: values.workload,
+        stressLevel: values.stress,
+        notes: "" // Optional notes field
+      };
+
+      await api.post('/checkins', payload);
+      
       setResult(res);
       setPhase('result');
     } catch (err) {
       console.error('Failed to save check-in:', err);
-      // Fallback: still show result even if Firestore fails
+      // If user already checked in today, backend returns 400
+      if (err.response?.status === 400) {
+        alert("You've already submitted a check-in for today!");
+      }
+      
+      // Fallback: still show result for immediate UX
       const res = calculateBurnoutScore(values);
       setResult(res);
       setPhase('result');
@@ -42,7 +58,6 @@ export default function CheckIn() {
 
   return (
     <div className="page-wrapper noise" style={{ paddingTop: 88, paddingBottom: 60, minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-      <div className="ambient-orb" style={{ width: 400, height: 400, background: 'radial-gradient(circle, #6c63ff, transparent)', top: -80, left: -80, opacity: 0.12 }} />
 
       <div style={{ width: '100%', maxWidth: 560, padding: '0 24px', position: 'relative', zIndex: 1 }}>
         <AnimatePresence mode="wait">

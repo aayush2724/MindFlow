@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import api from '../lib/api';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
-import { fetchLastCheckin, fetchHistory } from '../lib/firestore';
 import { calculateBurnoutScore } from '../lib/burnoutEngine';
 
 export default function Dashboard() {
@@ -14,14 +14,28 @@ export default function Dashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [last, hist] = await Promise.all([
-          fetchLastCheckin(user?.uid || 'demo'),
-          fetchHistory(user?.uid || 'demo', 7),
+        const [scoreRes, historyRes] = await Promise.all([
+          api.get('/burnout/me'),
+          api.get('/burnout/me/history'),
         ]);
-        const input = last || { mood:6, sleep:6.5, workload:5, stress:4 };
-        setBurnout(calculateBurnoutScore(input));
-        setHistory(hist);
-      } catch {
+        
+        if (scoreRes.data.hasData) {
+          setBurnout({
+            score: scoreRes.data.burnoutScore,
+            level: scoreRes.data.riskLevel,
+            advice: [] // Optional advice if backend provides it
+          });
+        } else {
+          // Fallback for first-time users
+          setBurnout(calculateBurnoutScore({ mood:7, sleep:7, workload:4, stress:3 }));
+        }
+
+        setHistory(historyRes.data.map(h => ({
+          score: h.burnoutScore,
+          date: h.calculatedAt
+        })));
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
         setBurnout(calculateBurnoutScore({ mood:7, sleep:7, workload:4, stress:3 }));
       }
     }
@@ -40,18 +54,6 @@ export default function Dashboard() {
 
   return (
     <div style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      {/* Space background */}
-      <div className="space-bg">
-        <div className="starfield-db" />
-        <div className="starfield-db starfield-db-2" />
-        <div className="accretion-disk-db-back" style={{ zIndex:1 }} />
-        <div className="photon-ring-db-outer" style={{ zIndex:3 }} />
-        <div className="photon-ring-db" style={{ zIndex:4 }} />
-        <div className="black-hole-center-db" style={{ zIndex:5 }} />
-        <div className="accretion-disk-db" style={{ zIndex:2 }} />
-        <div className="ambient-glow-db" style={{ zIndex:6 }} />
-      </div>
-
       <Sidebar active="dashboard" />
 
       {/* Top Header */}

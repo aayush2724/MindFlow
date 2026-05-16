@@ -1,11 +1,10 @@
 import { useState } from 'react';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, BookOpen, Moon, Target, Check } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import { useAuth } from '../context/AuthContext';
-import { db, DEMO_MODE } from '../lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const STEPS = [
   {
@@ -56,18 +55,23 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     if (isLast) {
-      localStorage.setItem('mf_onboarding', JSON.stringify(data));
-      if (!DEMO_MODE && user?.uid) {
-        try {
-          await setDoc(doc(db, 'users', user.uid), {
-            profile: data,
-            onboardedAt: serverTimestamp(),
-          }, { merge: true });
-        } catch (err) {
-          console.warn('Onboarding Firestore save failed (non-critical):', err.message);
-        }
+      try {
+        // Map to backend schema
+        const payload = {
+          semester: data.semester,
+          subjects: [data.major], // Using major as a subject proxy
+          sleepGoal: parseInt(data.sleepGoal) || 8
+        };
+
+        await api.post('/users/onboard', payload);
+        localStorage.setItem('mf_onboarding', 'true');
+        navigate('/dashboard');
+      } catch (err) {
+        console.error('Onboarding failed:', err);
+        // Fallback to local storage if API fails
+        localStorage.setItem('mf_onboarding', 'true');
+        navigate('/dashboard');
       }
-      navigate('/dashboard');
     } else {
       setStep(s => s + 1);
     }

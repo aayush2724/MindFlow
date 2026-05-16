@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 export default function Landing() {
   useEffect(() => {
@@ -59,8 +60,15 @@ export default function Landing() {
           {['DASHBOARD','RESOURCES','COMMUNITY'].map((l,i) => {
             const dest = i === 0 ? '/dashboard' : (i === 1 ? '/resources' : '/community');
             return (
-              <Link key={l} to={dest} className="text-[11px] font-semibold tracking-[0.3em] transition-colors duration-300"
-                style={{ color: i===0 ? '#e1fdff' : '#b9cacb' }}>{l}</Link>
+              <motion.div
+                key={l}
+                whileHover={{ scale: 1.15, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative"
+              >
+                <Link to={dest} className="text-[11px] font-semibold tracking-[0.3em] transition-colors duration-300"
+                  style={{ color: i===0 ? '#e1fdff' : '#b9cacb' }}>{l}</Link>
+              </motion.div>
             );
           })}
         </div>

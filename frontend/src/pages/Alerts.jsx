@@ -52,10 +52,21 @@ export default function Alerts() {
             <input className="bg-transparent border-none outline-none text-sm terminal-text w-48 placeholder:opacity-40" style={{ color:'#e5e2e3' }} placeholder="SEARCH_ALERTS..." />
           </div>
           <div className="flex items-center gap-4">
-            <button><span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span></button>
-            <div className="w-10 h-10 rounded-full border p-0.5" style={{ borderColor:'rgba(0,219,231,0.3)' }}>
+            <motion.button 
+              whileHover={{ scale: 1.2, rotate: 15 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => alert("No new notifications")}
+            >
+              <span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span>
+            </motion.button>
+            <motion.div 
+              whileHover={{ scale: 1.1, borderColor: '#00dbe7' }}
+              className="w-10 h-10 rounded-full border p-0.5 cursor-pointer" 
+              style={{ borderColor:'rgba(0,219,231,0.3)' }}
+              onClick={() => alert("Counselor Profile")}
+            >
               <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-sm" style={{ background:'rgba(0,219,231,0.2)', color:'#e1fdff' }}>C</div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </nav>

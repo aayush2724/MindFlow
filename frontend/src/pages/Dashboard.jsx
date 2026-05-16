@@ -68,12 +68,23 @@ export default function Dashboard() {
             <span className="material-symbols-outlined text-sm mr-2" style={{ color:'#b9cacb' }}>search</span>
             <input className="bg-transparent border-none outline-none text-xs w-48 placeholder:opacity-40" style={{ color:'#e5e2e3' }} placeholder="SEARCH NEURAL NET..." />
           </div>
-          <button><span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span></button>
-          <div className="w-10 h-10 rounded-lg border overflow-hidden" style={{ borderColor:'rgba(210,255,0,0.3)' }}>
+          <motion.button 
+            whileHover={{ scale: 1.2, rotate: 15 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => alert("No new notifications")}
+          >
+            <span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span>
+          </motion.button>
+          <motion.div 
+            whileHover={{ scale: 1.1, borderColor: '#D2FF00' }}
+            className="w-10 h-10 rounded-lg border overflow-hidden cursor-pointer" 
+            style={{ borderColor:'rgba(210,255,0,0.3)' }}
+            onClick={() => alert(`Profile: ${user?.displayName || 'User'}`)}
+          >
             <div className="w-full h-full rounded-lg flex items-center justify-center font-bold text-sm" style={{ background:'rgba(0,219,231,0.2)', color:'#e1fdff' }}>
               {(user?.displayName || 'A')[0].toUpperCase()}
             </div>
-          </div>
+          </motion.div>
         </div>
       </header>
 

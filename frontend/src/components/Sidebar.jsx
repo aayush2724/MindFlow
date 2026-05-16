@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 
 const NAV_STUDENT = [
   { icon: 'grid_view',           label: 'Dashboard',  to: '/dashboard' },
-  { icon: 'radio_button_checked',label: 'MoodMap',    to: '/checkin' },
   { icon: 'calendar_today',      label: 'CalmCal',    to: '/calmcal' },
   { icon: 'auto_stories',        label: 'Resources',  to: '/resources' },
   { icon: 'group',               label: 'Community',  to: '/community' },

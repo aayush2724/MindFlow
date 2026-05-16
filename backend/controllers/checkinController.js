@@ -8,19 +8,15 @@ const { calculateBurnoutScore } = require('../utils/scoring');
 const submitCheckin = async (req, res, next) => {
   try {
     const { uid } = req.user;
-    const { moodScore, sleepHours, stressLevel, workloadRating, notes } = req.body;
+    const { moodScore, sleepHours, stressLevel, workloadRating, notes, dateKey } = req.body;
 
-    // 1. Check if user already checked in today (UTC)
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    // 1. Check if user already checked in for this local dateKey
+    // dateKey format: YYYY-MM-DD (determined by client locale)
+    const activeDateKey = dateKey || new Date().toISOString().split('T')[0];
     
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
     const existingCheckin = await db.collection('checkins')
       .where('uid', '==', uid)
-      .where('timestamp', '>=', startOfDay)
-      .where('timestamp', '<=', endOfDay)
+      .where('dateKey', '==', activeDateKey)
       .limit(1)
       .get();
 
@@ -28,13 +24,23 @@ const submitCheckin = async (req, res, next) => {
       return res.status(400).json({ error: 'You have already submitted a check-in for today' });
     }
 
-    // 2. Create the check-in
+    // 2. Create the check-in with validation and clamping
+    const mood = Math.min(10, Math.max(1, Number(moodScore)));
+    const sleep = Math.min(24, Math.max(0, Number(sleepHours)));
+    const stress = Math.min(10, Math.max(1, Number(stressLevel)));
+    const workload = Math.min(10, Math.max(1, Number(workloadRating)));
+
+    if ([mood, sleep, stress, workload].some(isNaN)) {
+      return res.status(400).json({ error: 'Invalid check-in values: must be numeric' });
+    }
+
     const checkinData = {
       uid,
-      moodScore: Number(moodScore),
-      sleepHours: Number(sleepHours),
-      stressLevel: Number(stressLevel),
-      workloadRating: Number(workloadRating),
+      dateKey: activeDateKey,
+      moodScore: mood,
+      sleepHours: sleep,
+      stressLevel: stress,
+      workloadRating: workload,
       notes: notes || '',
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     };
@@ -42,8 +48,9 @@ const submitCheckin = async (req, res, next) => {
     const docRef = await db.collection('checkins').add(checkinData);
     
     // 3. Trigger burnout calculation asynchronously
-    // Note: We don't 'await' it to avoid delaying the response
-    calculateBurnoutScore(uid);
+    calculateBurnoutScore(uid).catch(err => 
+      console.error(`[CRITICAL] Burnout calculation failed for user ${uid}:`, err)
+    );
 
     res.status(201).json({
       message: 'Check-in submitted successfully',

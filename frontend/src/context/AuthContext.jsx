@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
 
 const AuthContext = createContext(null);
@@ -34,10 +35,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('student'); // 'student' | 'counselor'
 
-  const getRoleFromEmail = (email) => 
-    email?.includes('counselor') || email?.includes('admin') 
-      ? 'counselor' 
-      : 'student';
+  // Role is exclusively fetched from Firestore via the backend
+  // to prevent email-based privilege escalation.
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -60,10 +59,8 @@ export function AuthProvider({ children }) {
           setRole(profile.role || 'student');
         } catch (err) {
           console.error('Failed to fetch user profile from backend:', err);
-          // Fallback to role from email if backend profile fails
-          const detectedRole = getRoleFromEmail(firebaseUser.email);
-          setUser({ ...firebaseUser, role: detectedRole });
-          setRole(detectedRole);
+          setUser({ ...firebaseUser, role: 'student' });
+          setRole('student');
         }
       } else {
         setUser(null);
@@ -97,9 +94,10 @@ export function AuthProvider({ children }) {
       return;
     }
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    const detectedRole = getRoleFromEmail(email);
-    setUser({ ...cred.user, role: detectedRole });
-    setRole(detectedRole);
+    const { data: profile } = await api.get('/users/me');
+    setUser({ ...cred.user, ...profile });
+    setRole(profile.role || 'student');
+    return { isNewUser: false }; // Sign-in is never "new" in this context
   };
 
   const signup = async (email, password, name) => {
@@ -109,9 +107,9 @@ export function AuthProvider({ children }) {
     }
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: name });
-    const detectedRole = getRoleFromEmail(email);
-    setUser({ ...newUser, role: detectedRole });
-    setRole(detectedRole);
+    setUser({ ...newUser, role: 'student' });
+    setRole('student');
+    return { isNewUser: true };
   };
 
   const loginWithGoogle = async () => {
@@ -120,9 +118,20 @@ export function AuthProvider({ children }) {
       return;
     }
     const cred = await signInWithPopup(auth, googleProvider);
-    const detectedRole = getRoleFromEmail(cred.user.email);
-    setUser({ ...cred.user, role: detectedRole });
-    setRole(detectedRole);
+    const isNewUser = getAdditionalUserInfo(cred)?.isNewUser;
+    
+    // If returning user, fetch profile; if new, we'll create it during onboarding
+    let profile = { role: 'student' };
+    if (!isNewUser) {
+      try {
+        const res = await api.get('/users/me');
+        profile = res.data;
+      } catch (e) { console.error("Google login profile fetch failed:", e); }
+    }
+    
+    setUser({ ...cred.user, ...profile });
+    setRole(profile.role || 'student');
+    return { isNewUser };
   };
 
   return (

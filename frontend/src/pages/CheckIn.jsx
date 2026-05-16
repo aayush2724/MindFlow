@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,8 @@ export default function CheckIn() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const liveResult = useMemo(() => calculateBurnoutScore(values), [values]);
+
   const set = (k) => (v) => setValues(prev => ({ ...prev, [k]: v }));
 
   const handleSubmit = async () => {
@@ -33,21 +35,40 @@ export default function CheckIn() {
         sleepHours: values.sleep,
         workloadRating: values.workload,
         stressLevel: values.stress,
-        notes: "" // Optional notes field
+        notes: "", // Optional notes field
+        dateKey: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
       };
 
       await api.post('/checkins', payload);
       
-      setResult(res);
+      // Wait briefly for the server-side async calculation to finish
+      await new Promise(r => setTimeout(r, 1200));
+      const { data: serverScore } = await api.get('/burnout/me');
+
+      if (serverScore.hasData) {
+        // Now fetch real AI insights for the result screen
+        const { data: aiRes } = await api.get('/insights/me');
+        const local = calculateBurnoutScore(values);
+        
+        setResult({
+          score: serverScore.score,
+          risk: serverScore.riskLevel,
+          level: serverScore.riskLevel.toUpperCase(),
+          trend: serverScore.trend,
+          color: local.color, // Keep the color mapping from engine
+          insights: aiRes.insights || local.advice
+        });
+      } else {
+        // Fallback to local calculation if server fetch fails or is too slow
+        setResult(calculateBurnoutScore(values));
+      }
       setPhase('result');
     } catch (err) {
       console.error('Failed to save check-in:', err);
-      // If user already checked in today, backend returns 400
       if (err.response?.status === 400) {
         alert("You've already submitted a check-in for today!");
       }
       
-      // Fallback: still show result for immediate UX
       const res = calculateBurnoutScore(values);
       setResult(res);
       setPhase('result');
@@ -163,7 +184,7 @@ export default function CheckIn() {
               <GlassCard hover={false} style={{ padding: 24, marginBottom: 20 }}>
                 <div className="label" style={{ marginBottom: 16 }}>AI-generated recovery advice</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {result.advice.map((a, i) => (
+                  {(result.insights || result.advice).map((a, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, x: -10 }}

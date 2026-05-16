@@ -1,5 +1,4 @@
 const { db, admin } = require('../utils/firebase');
-const { v4: uuidv4 } = require('uuid'); // If we needed unique IDs, but Firestore handles doc IDs
 
 /**
  * @desc Sync Google Calendar events from frontend
@@ -17,17 +16,23 @@ const syncEvents = async (req, res, next) => {
     const batch = db.batch();
     
     events.forEach(event => {
-      const docRef = db.collection('calendar_events').doc();
+      const weight = Math.min(5, Math.max(1, Number(event.stressWeight) || 1));
+      
+      // Use Google Event ID as stable key to prevent duplicates on re-sync
+      const eventKey = event.googleEventId || event.id;
+      if (!eventKey) return; // Skip if no stable ID provided
+
+      const docRef = db.collection('calendar_events').doc(`${uid}_${eventKey}`);
       batch.set(docRef, {
         uid,
         title: event.title,
         type: event.type || 'class',
         startTime: event.startTime,
         endTime: event.endTime,
-        stressWeight: Number(event.stressWeight) || 1,
+        stressWeight: weight,
         source: 'google',
         createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      }, { merge: true });
     });
 
     await batch.commit();

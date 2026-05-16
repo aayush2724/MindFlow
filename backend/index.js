@@ -14,7 +14,11 @@ const PORT = process.env.PORT || 5000;
 
 // Security and Logging Middleware
 app.use(helmet());
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined')); // Structured, safe logging for production
+} else {
+  app.use(morgan('dev')); // Colorized logging for development
+}
 
 // CORS configuration
 app.use(cors({

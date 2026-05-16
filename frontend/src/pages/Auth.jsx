@@ -19,12 +19,14 @@ export default function Auth() {
     setLoading(true);
     setError('');
     try {
+      let isNew = false;
       if (tab === 'signin') {
         await login(email, password);
       } else {
-        await signup(email, password, name || 'Student');
+        const res = await signup(email, password, name || 'Student');
+        isNew = res?.isNewUser;
       }
-      navigate('/dashboard');
+      navigate(isNew ? '/onboarding' : '/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -36,8 +38,8 @@ export default function Auth() {
     setLoading(true);
     setError('');
     try {
-      await loginWithGoogle();
-      navigate('/dashboard');
+      const res = await loginWithGoogle();
+      navigate(res?.isNewUser ? '/onboarding' : '/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

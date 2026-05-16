@@ -1,11 +1,22 @@
 const { db, admin } = require('../utils/firebase');
 
+let cachedOverview = null;
+let lastCacheUpdate = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 /**
  * @desc Get campus-wide analytics overview (Counselor only)
  * @route GET /api/analytics/overview
  */
 const getOverviewStats = async (req, res, next) => {
   try {
+    // 0. Check Cache
+    const now = Date.now();
+    if (cachedOverview && (now - lastCacheUpdate < CACHE_DURATION)) {
+      console.log('⚡ Serving analytics from cache');
+      return res.status(200).json(cachedOverview);
+    }
+
     // 1. Get total students count
     const usersSnapshot = await db.collection('users').where('role', '==', 'student').get();
     const totalStudents = usersSnapshot.size;
@@ -32,14 +43,19 @@ const getOverviewStats = async (req, res, next) => {
     
     const checkInRate = (checkinsToday.size / totalStudents) * 100;
 
-    res.status(200).json({
+    const result = {
       campusAverageBurnout: Math.round(avgBurnoutScore),
       highRiskCount,
       highRiskPercentage: Math.round(highRiskPercentage),
       checkInRate: Math.round(checkInRate),
       totalStudents,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    cachedOverview = result;
+    lastCacheUpdate = Date.now();
+
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

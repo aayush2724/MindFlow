@@ -9,6 +9,6 @@ router.get('/overview', verifyToken, requireRole('counselor'), analyticsControll
 router.get('/departments', verifyToken, requireRole('counselor'), analyticsController.getDepartmentBreakdown);
 
 // System aggregation (Internal trigger)
-router.post('/aggregate', analyticsController.aggregateAnalytics);
+router.post('/aggregate', verifyToken, requireRole('counselor'), analyticsController.aggregateAnalytics);
 
 module.exports = router;

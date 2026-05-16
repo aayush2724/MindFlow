@@ -63,8 +63,8 @@ export default function Alerts() {
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-5xl mx-auto">
           {/* Section 1: Header + KPIs */}
-          <div className="sticky rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
-            style={{ top:88, zIndex:10, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
+          <div className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div className="space-y-2">
                 <h1 className="font-bold tracking-tight" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(36px,5vw,64px)', color:'#e1fdff' }}>Alert Command</h1>
@@ -120,8 +120,8 @@ export default function Alerts() {
                     borderColor:'rgba(255,255,255,0.08)',
                     borderLeft: `4px solid ${riskColor}`
                   }}>
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-4 flex-1">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between w-full gap-4">
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-lg" style={{ color:'#e1fdff' }}>{alert.pseudonym}</span>
                         <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" 
@@ -134,22 +134,22 @@ export default function Alerts() {
                             RESOLVED
                           </span>
                         )}
-                        <span className="text-xs terminal-text opacity-40 ml-auto" style={{ color:'#b9cacb' }}>{alert.triggeredAt}</span>
                       </div>
-                      <div className="flex items-center gap-6">
-                        <div className="terminal-text text-sm" style={{ color:'#b9cacb' }}>
-                          BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.burnoutScore}</span>
-                        </div>
+                      <div className="flex items-center gap-6 shrink-0">
+                        <span className="text-xs terminal-text opacity-40" style={{ color:'#b9cacb' }}>{alert.triggeredAt}</span>
+                        {!isAck && (
+                          <button 
+                            onClick={() => handleAcknowledge(alert.id)}
+                            className="terminal-text text-[10px] font-bold uppercase underline underline-offset-4 transition-colors hover:text-[#D2FF00]" 
+                            style={{ color:'#e1fdff' }}>
+                            ACKNOWLEDGE
+                          </button>
+                        )}
                       </div>
                     </div>
-                    {!isAck && (
-                      <button 
-                        onClick={() => handleAcknowledge(alert.id)}
-                        className="terminal-text text-[10px] font-bold uppercase underline underline-offset-4 transition-colors hover:text-[#D2FF00]" 
-                        style={{ color:'#e1fdff' }}>
-                        ACKNOWLEDGE
-                      </button>
-                    )}
+                    <div className="terminal-text text-sm" style={{ color:'#b9cacb' }}>
+                      BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.burnoutScore}</span>
+                    </div>
                   </div>
                 </div>
               );

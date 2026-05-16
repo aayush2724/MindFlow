@@ -68,8 +68,8 @@ export default function Departments() {
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-7xl mx-auto">
           {/* Section 1: Header + KPIs */}
-          <div className="sticky rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
-            style={{ top:88, zIndex:10, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
+          <div className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div className="space-y-2">
                 <h1 className="font-bold tracking-tight" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(36px,5vw,64px)', color:'#e1fdff' }}>Department Intel</h1>

@@ -60,7 +60,7 @@ export default function Community() {
             <div className="lg:col-span-8 space-y-6">
               
               {/* Compose Post */}
-              <div className="glass-panel p-6 relative overflow-hidden border border-[#c084fc]/20">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="glass-panel p-6 relative overflow-hidden border border-[#c084fc]/20">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#c084fc] opacity-5 blur-[50px] pointer-events-none" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-4">
@@ -88,7 +88,7 @@ export default function Community() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Feed */}
               <div className="space-y-4">
@@ -139,7 +139,7 @@ export default function Community() {
             </div>
 
             {/* Right Sidebar */}
-            <div className="lg:col-span-4 space-y-6">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="lg:col-span-4 space-y-6">
               
               {/* Active Groups */}
               <div className="glass-panel p-6">
@@ -182,7 +182,7 @@ export default function Community() {
                 </div>
               </div>
 
-            </div>
+            </motion.div>
             
           </div>
         </div>

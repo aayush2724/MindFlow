@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { fetchLastCheckin, fetchHistory } from '../lib/firestore';
@@ -83,7 +84,7 @@ export default function Dashboard() {
           <div className="pb-12">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
               {/* MoodMap Orb */}
-              <div className="lg:col-span-8 glass-panel rounded-[2rem] p-10 flex flex-col items-center justify-center relative overflow-hidden min-h-[550px] hud-border">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="lg:col-span-8 glass-panel rounded-[2rem] p-10 flex flex-col items-center justify-center relative overflow-hidden min-h-[550px] hud-border">
                 <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center">
                   <div className="w-4/5 h-4/5 rounded-full border border-[#e1fdff]/20 animate-spin" style={{ animationDuration:'20s' }} />
                   <div className="absolute w-3/5 h-3/5 rounded-full border border-[#D2FF00]/10 animate-spin" style={{ animationDuration:'15s', animationDirection:'reverse' }} />
@@ -128,12 +129,12 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
 
               {/* Right column */}
               <div className="lg:col-span-4 flex flex-col gap-8">
                 {/* Daily Check-in */}
-                <div className="glass-panel rounded-[2rem] p-8 hud-border">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="glass-panel rounded-[2rem] p-8 hud-border">
                   <div className="flex justify-between items-start mb-6">
                     <h3 className="font-semibold text-xl tracking-wide" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Status</h3>
                     <span className="material-symbols-outlined animate-pulse" style={{ color:'#D2FF00' }}>bolt</span>
@@ -150,10 +151,10 @@ export default function Dashboard() {
                       </Link>
                     ))}
                   </div>
-                </div>
+                </motion.div>
 
                 {/* AI Insights */}
-                <div className="glass-panel rounded-[2rem] p-8 flex-1 border-l-[3px]" style={{ borderLeftColor:'rgba(210,255,0,0.6)' }}>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="glass-panel rounded-[2rem] p-8 flex-1 border-l-[3px]" style={{ borderLeftColor:'rgba(210,255,0,0.6)' }}>
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:'rgba(0,219,231,0.1)' }}>
                       <span className="material-symbols-outlined text-sm" style={{ color:'#e1fdff', fontVariationSettings:"'FILL' 1" }}>smart_toy</span>
@@ -177,13 +178,13 @@ export default function Dashboard() {
                       FULL_ANALYSIS_DATA <span className="material-symbols-outlined text-[10px] group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
                     </button>
                   </Link>
-                </div>
+                </motion.div>
               </div>
             </div>
           </div>
 
           {/* Lower Section — CalmCal preview */}
-          <div className="relative z-20 mt-20 rounded-3xl p-6 lg:p-8 mb-12 border"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="relative z-20 mt-20 rounded-3xl p-6 lg:p-8 mb-12 border"
             style={{ background:'rgba(14,14,15,0.9)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.1)', boxShadow:'0 -30px 60px rgba(0,0,0,0.6)' }}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* CalmCal Bar Chart */}
@@ -234,7 +235,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </main>
 

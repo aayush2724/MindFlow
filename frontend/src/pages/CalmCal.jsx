@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { fetchHeatmapData } from '../lib/firestore';
@@ -91,7 +92,7 @@ export default function CalmCal() {
             {/* Left — Heatmap + Timeline */}
             <div className="lg:col-span-8 space-y-8">
               {/* Thermal Heatmap */}
-              <div className="rounded-3xl p-8 overflow-hidden relative shadow-2xl"
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="rounded-3xl p-8 overflow-hidden relative shadow-2xl"
                 style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
                 <div className="absolute inset-0 opacity-30 pointer-events-none"
                   style={{ background:'linear-gradient(135deg,rgba(0,219,231,0.05) 0%,rgba(210,255,0,0.05) 50%,rgba(255,180,171,0.1) 100%)' }} />
@@ -123,10 +124,10 @@ export default function CalmCal() {
                   <button className="relative z-10 px-8 py-3 rounded-full font-bold text-xs terminal-text transition-all hover:shadow-[0_0_20px_rgba(0,219,231,0.4)]"
                     style={{ background:'#e1fdff', color:'#003548' }}>Schedule Now</button>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Daily Timeline */}
-              <div className="rounded-3xl p-8 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="rounded-3xl p-8 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
                     <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Flow: Oct 16</h3>
@@ -163,13 +164,13 @@ export default function CalmCal() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Right sidebar panel */}
             <aside className="lg:col-span-4 space-y-8">
               {/* Burnout Ring */}
-              <div className="rounded-3xl p-8 border-t-2 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)', borderTop:'2px solid rgba(255,180,171,0.5)' }}>
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="rounded-3xl p-8 border-t-2 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)', borderTop:'2px solid rgba(255,180,171,0.5)' }}>
                 <div className="flex items-center gap-4 mb-6">
                   <span className="material-symbols-outlined" style={{ color:'#ffb4ab' }}>warning</span>
                   <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Weekly Burnout</h3>
@@ -197,10 +198,10 @@ export default function CalmCal() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
 
               {/* Smart Breaks */}
-              <div className="rounded-3xl p-8 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="rounded-3xl p-8 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Smart Breaks</h3>
                   <span className="material-symbols-outlined cursor-pointer hover:text-[#e1fdff] transition-colors" style={{ color:'#b9cacb' }}>info</span>
@@ -224,7 +225,7 @@ export default function CalmCal() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             </aside>
           </div>
         </div>

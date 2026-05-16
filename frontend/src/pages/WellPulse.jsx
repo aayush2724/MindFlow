@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { motion } from 'framer-motion';
 
 const DEPTS = [
   { name:'School of Engineering', nodes:'2,450_NODES', mood:'3.2 / 5.0', risk:'CRITICAL', riskColor:'#ffb4ab', dotColor:'#ffb4ab' },
@@ -63,7 +64,7 @@ export default function WellPulse() {
         <div className="max-w-7xl mx-auto">
 
           {/* Section 1: Header + KPIs */}
-          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ top:88, zIndex:10, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div className="space-y-2">
@@ -107,10 +108,10 @@ export default function WellPulse() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Section 2: Visualization */}
-          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ top:112, zIndex:20, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Mesh Map */}
@@ -190,10 +191,10 @@ export default function WellPulse() {
                   style={{ borderColor:'rgba(255,255,255,0.08)', color:'#b9cacb' }}>QUERY_FULL_LOGS</button>
               </section>
             </div>
-          </div>
+          </motion.div>
 
           {/* Section 3: Burnout Trend Chart */}
-          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ top:136, zIndex:30, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <section className="rounded-3xl p-8 relative overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
@@ -227,10 +228,10 @@ export default function WellPulse() {
                 {MONTHS.map(m => <span key={m}>{m}</span>)}
               </div>
             </section>
-          </div>
+          </motion.div>
 
           {/* Section 4: Departmental Table */}
-          <div className="sticky rounded-3xl p-6 md:p-8 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="sticky rounded-3xl p-6 md:p-8 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ top:160, zIndex:40, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <section className="rounded-3xl overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
@@ -271,7 +272,7 @@ export default function WellPulse() {
                 </table>
               </div>
             </section>
-          </div>
+          </motion.div>
 
         </div>
       </main>

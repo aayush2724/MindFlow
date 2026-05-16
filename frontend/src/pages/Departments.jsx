@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
+import { motion } from 'framer-motion';
 
 const MOCK_DEPARTMENTS = [
   { name:'School of Engineering', students:2450, avgBurnout:72, checkInRate:68, riskLevel:'critical', stressors:['DEADLINES','WORKLOAD','SLEEP_DEFICIT'] },
@@ -68,7 +69,7 @@ export default function Departments() {
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-7xl mx-auto">
           {/* Section 1: Header + KPIs */}
-          <div className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div className="space-y-2">
@@ -106,14 +107,14 @@ export default function Departments() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Section 2: Department Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {MOCK_DEPARTMENTS.map((dept, i) => {
               const risk = RISK_MAP[dept.riskLevel];
               return (
-                <div key={i} className="rounded-3xl p-8 flex flex-col gap-6 border transition-all hover:border-[rgba(0,219,231,0.4)]"
+                <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }} className="rounded-3xl p-8 flex flex-col gap-6 border transition-all hover:border-[rgba(0,219,231,0.4)]"
                   style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
                   <div className="flex justify-between items-start">
                     <div>
@@ -155,13 +156,13 @@ export default function Departments() {
 
                   <button className="mt-auto w-full py-3 border rounded-xl text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-all hover:text-[#D2FF00]"
                     style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e1fdff' }}>DEEP_DIVE</button>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
           {/* Section 3: Trend Analysis */}
-          <div className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ top:112, zIndex:20, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <section className="rounded-3xl p-8 relative overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
@@ -205,7 +206,7 @@ export default function Departments() {
                 {['MON','TUE','WED','THU','FRI','SAT','SUN'].map(d => <span key={d}>{d}</span>)}
               </div>
             </section>
-          </div>
+          </motion.div>
         </div>
       </main>
     </div>

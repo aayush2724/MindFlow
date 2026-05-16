@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Nav from './components/Nav';
 import Landing from './pages/Landing';
@@ -47,6 +47,20 @@ function LoadingScreen() {
   );
 }
 
+function PageTransition({ children }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, filter: 'blur(3px)' }}
+      animate={{ opacity: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, filter: 'blur(3px)' }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      style={{ willChange: 'opacity, filter', gridArea: '1 / 1 / 2 / 2', width: '100%' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function AppRoutes() {
   const location = useLocation();
   const { user, role } = useAuth();
@@ -59,22 +73,46 @@ function AppRoutes() {
       {showGlobalBackground && <CinematicBackground />}
       <CustomCursor />
       {showNav && <Nav />}
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={user ? <Navigate to={role === 'counselor' ? '/wellpulse' : '/dashboard'} replace /> : <Auth />} />
-          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute onlyRole="student"><Dashboard /></ProtectedRoute>} />
-          <Route path="/checkin" element={<ProtectedRoute onlyRole="student"><CheckIn /></ProtectedRoute>} />
-          <Route path="/calmcal" element={<ProtectedRoute onlyRole="student"><CalmCal /></ProtectedRoute>} />
-          <Route path="/wellpulse" element={<ProtectedRoute onlyRole="counselor"><WellPulse /></ProtectedRoute>} />
-          <Route path="/resources" element={<ProtectedRoute onlyRole="student"><Resources /></ProtectedRoute>} />
-          <Route path="/community" element={<ProtectedRoute onlyRole="student"><Community /></ProtectedRoute>} />
-          <Route path="/alerts" element={<ProtectedRoute onlyRole="counselor"><Alerts /></ProtectedRoute>} />
-          <Route path="/departments" element={<ProtectedRoute onlyRole="counselor"><Departments /></ProtectedRoute>} />
+      <div style={{ display: 'grid' }}>
+        <AnimatePresence>
+          <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+          <Route path="/auth" element={
+            user 
+              ? <Navigate to={role === 'counselor' ? '/wellpulse' : '/dashboard'} replace /> 
+              : <PageTransition><Auth /></PageTransition>
+          } />
+          <Route path="/onboarding" element={
+            <ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute onlyRole="student"><PageTransition><Dashboard /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/checkin" element={
+            <ProtectedRoute onlyRole="student"><PageTransition><CheckIn /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/calmcal" element={
+            <ProtectedRoute onlyRole="student"><PageTransition><CalmCal /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/wellpulse" element={
+            <ProtectedRoute onlyRole="counselor"><PageTransition><WellPulse /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/resources" element={
+            <ProtectedRoute onlyRole="student"><PageTransition><Resources /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/community" element={
+            <ProtectedRoute onlyRole="student"><PageTransition><Community /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/alerts" element={
+            <ProtectedRoute onlyRole="counselor"><PageTransition><Alerts /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/departments" element={
+            <ProtectedRoute onlyRole="counselor"><PageTransition><Departments /></PageTransition></ProtectedRoute>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
+      </div>
     </SmoothScroll>
   );
 }

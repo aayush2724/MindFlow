@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
+import { motion } from 'framer-motion';
 
 const MOCK_ALERTS = [
   { id:'1', pseudonym:'NODE_A7F2', riskLevel:'critical', burnoutScore:87, triggeredAt:'2024-01-15 09:32' },
@@ -63,7 +64,7 @@ export default function Alerts() {
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-5xl mx-auto">
           {/* Section 1: Header + KPIs */}
-          <div className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div className="space-y-2">
@@ -102,17 +103,18 @@ export default function Alerts() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Section 2: Alerts Feed */}
           <div className="space-y-4 mb-12">
-            {MOCK_ALERTS.map((alert) => {
+            {MOCK_ALERTS.map((alert, i) => {
               const isAck = acknowledged.includes(alert.id);
               const riskColor = alert.riskLevel === 'critical' ? '#ffb4ab' : '#D2FF00';
               const riskLabel = alert.riskLevel === 'critical' ? 'CRITICAL' : 'HIGH_RISK';
 
               return (
-                <div key={alert.id} 
+                <motion.div key={alert.id} 
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }}
                   className={`rounded-2xl p-6 border transition-all duration-500 ${isAck ? 'opacity-40' : ''}`}
                   style={{ 
                     background:'rgba(10,10,11,0.4)', 
@@ -151,19 +153,19 @@ export default function Alerts() {
                       BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.burnoutScore}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
           {/* Section 3: Empty State */}
           {isAllCleared && (
-            <div className="mt-24 flex flex-col items-center justify-center gap-4">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="mt-24 flex flex-col items-center justify-center gap-4">
               <span className="material-symbols-outlined text-6xl animate-pulse" style={{ color:'#00dbe7' }}>verified_user</span>
               <p className="terminal-text animate-pulse" style={{ color:'#00dbe7', letterSpacing:'0.2em' }}>
                 ALL_CLEAR — NO PENDING ALERTS
               </p>
-            </div>
+            </motion.div>
           )}
         </div>
       </main>

@@ -33,6 +33,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('student'); // 'student' | 'counselor'
 
+  const getRoleFromEmail = (email) => 
+    email?.includes('counselor') || email?.includes('admin') 
+      ? 'counselor' 
+      : 'student';
+
   useEffect(() => {
     if (DEMO_MODE) {
       const saved = localStorage.getItem('mf_demo_user');
@@ -47,8 +52,9 @@ export function AuthProvider({ children }) {
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser({ ...firebaseUser, role: 'student' });
-        setRole('student');
+        const detectedRole = getRoleFromEmail(firebaseUser.email);
+        setUser({ ...firebaseUser, role: detectedRole });
+        setRole(detectedRole);
       } else {
         setUser(null);
       }
@@ -81,8 +87,9 @@ export function AuthProvider({ children }) {
       return;
     }
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    setUser({ ...cred.user, role: 'student' });
-    setRole('student');
+    const detectedRole = getRoleFromEmail(email);
+    setUser({ ...cred.user, role: detectedRole });
+    setRole(detectedRole);
   };
 
   const signup = async (email, password, name) => {
@@ -92,8 +99,9 @@ export function AuthProvider({ children }) {
     }
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: name });
-    setUser({ ...newUser, role: 'student' });
-    setRole('student');
+    const detectedRole = getRoleFromEmail(email);
+    setUser({ ...newUser, role: detectedRole });
+    setRole(detectedRole);
   };
 
   const loginWithGoogle = async () => {
@@ -102,8 +110,9 @@ export function AuthProvider({ children }) {
       return;
     }
     const cred = await signInWithPopup(auth, googleProvider);
-    setUser({ ...cred.user, role: 'student' });
-    setRole('student');
+    const detectedRole = getRoleFromEmail(cred.user.email);
+    setUser({ ...cred.user, role: detectedRole });
+    setRole(detectedRole);
   };
 
   return (

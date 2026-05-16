@@ -10,10 +10,9 @@ const NAV_STUDENT = [
 ];
 
 const NAV_COUNSELOR = [
-  { icon: 'grid_view',  label: 'DASHBOARD', to: '/wellpulse' },
-  { icon: 'analytics',  label: 'MOODMAP',   to: '/checkin' },
-  { icon: 'insights',   label: 'CALMCAL',   to: '/calmcal' },
-  { icon: 'database',   label: 'RESOURCES', to: '/resources' },
+  { icon: 'monitor_heart', label: 'WellPulse',   to: '/wellpulse' },
+  { icon: 'notifications', label: 'Alerts',       to: '/alerts' },
+  { icon: 'analytics',     label: 'Departments',  to: '/departments' },
 ];
 
 export default function Sidebar({ active }) {
@@ -33,10 +32,10 @@ export default function Sidebar({ active }) {
         </div>
         <div>
           <h1 className="font-bold text-xl tracking-tight" style={{ color: '#D2FF00', fontFamily: 'Space Grotesk' }}>
-            {role === 'counselor' ? 'WellPulse' : 'MindFlow'}
+            MindFlow
           </h1>
           <p className="text-[10px] terminal-text opacity-70" style={{ color: '#b9cacb' }}>
-            {role === 'counselor' ? 'ANALYTICS ENGINE' : 'ZEN MODE ACTIVATED'}
+            {role === 'counselor' ? 'ADMIN CONSOLE' : 'ZEN MODE ACTIVATED'}
           </p>
         </div>
       </div>

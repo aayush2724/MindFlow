@@ -15,11 +15,14 @@ import SmoothScroll from './components/SmoothScroll';
 import CustomCursor from './components/CustomCursor';
 import CinematicBackground from './components/CinematicBackground';
 
-function ProtectedRoute({ children, allowCounselor = false }) {
+function ProtectedRoute({ children, onlyRole = null }) {
   const { user, loading, role } = useAuth();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
-  if (allowCounselor && role !== 'counselor') return <Navigate to="/dashboard" replace />;
+  if (onlyRole === 'counselor' && role !== 'counselor') 
+    return <Navigate to="/dashboard" replace />;
+  if (onlyRole === 'student' && role !== 'student') 
+    return <Navigate to="/wellpulse" replace />;
   return children;
 }
 
@@ -44,7 +47,7 @@ function LoadingScreen() {
 
 function AppRoutes() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   // Only Auth and Onboarding use the old global nav/bg system
   const showNav = ['/onboarding', '/checkin', '/auth'].includes(location.pathname);
   const showGlobalBackground = ['/onboarding', '/checkin', '/auth'].includes(location.pathname);
@@ -57,14 +60,14 @@ function AppRoutes() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+          <Route path="/auth" element={user ? <Navigate to={role === 'counselor' ? '/wellpulse' : '/dashboard'} replace /> : <Auth />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/checkin" element={<ProtectedRoute><CheckIn /></ProtectedRoute>} />
-          <Route path="/calmcal" element={<ProtectedRoute><CalmCal /></ProtectedRoute>} />
-          <Route path="/wellpulse" element={<ProtectedRoute allowCounselor><WellPulse /></ProtectedRoute>} />
-          <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
-          <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute onlyRole="student"><Dashboard /></ProtectedRoute>} />
+          <Route path="/checkin" element={<ProtectedRoute onlyRole="student"><CheckIn /></ProtectedRoute>} />
+          <Route path="/calmcal" element={<ProtectedRoute onlyRole="student"><CalmCal /></ProtectedRoute>} />
+          <Route path="/wellpulse" element={<ProtectedRoute onlyRole="counselor"><WellPulse /></ProtectedRoute>} />
+          <Route path="/resources" element={<ProtectedRoute onlyRole="student"><Resources /></ProtectedRoute>} />
+          <Route path="/community" element={<ProtectedRoute onlyRole="student"><Community /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

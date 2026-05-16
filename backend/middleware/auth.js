@@ -14,9 +14,14 @@ const verifyToken = async (req, res, next) => {
   try {
     const decodedToken = await auth.verifyIdToken(idToken);
     
-    // Fetch role from Firestore if not in token custom claims
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-    const role = userDoc.exists ? userDoc.data().role : 'student';
+    let role = 'student';
+    try {
+      // Try to fetch role from Firestore, but don't crash if it fails
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (userDoc.exists) role = userDoc.data().role;
+    } catch (fsError) {
+      console.warn('Firestore unreachable, defaulting to student role:', fsError.message);
+    }
 
     req.user = {
       ...decodedToken,

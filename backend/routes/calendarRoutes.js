@@ -7,6 +7,7 @@ const { verifyToken } = require('../middleware/auth');
 router.use(verifyToken);
 
 router.post('/sync', calendarController.syncEvents);
+router.post('/', calendarController.addEvent);
 router.get('/me', calendarController.getMyEvents);
 router.post('/recover', calendarController.generateRecoveryBreaks);
 router.delete('/events/:eventId', calendarController.deleteEvent);

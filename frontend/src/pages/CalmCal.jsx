@@ -1,10 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../lib/api';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import { 
+  format, 
+  startOfWeek, 
+  addDays, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  isSameDay, 
+  getDate,
+  parseISO
+} from 'date-fns';
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -13,7 +24,17 @@ export default function CalmCal() {
   const [heatmap, setHeatmap] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('weekly'); // 'weekly' | 'monthly'
-  const [selectedDate, setSelectedDate] = useState(16);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newEvent, setNewEvent] = useState({ 
+    title: '', 
+    type: 'class', 
+    startDate: format(new Date(), 'yyyy-MM-dd'), 
+    endDate: format(new Date(), 'yyyy-MM-dd'), 
+    startTime: '', 
+    endTime: '', 
+    stressWeight: 3 
+  });
 
   useEffect(() => {
     async function load() {
@@ -29,44 +50,192 @@ export default function CalmCal() {
     load();
   }, [user]);
 
-  // Build view display
-  const generateHeatmapData = (isMonthly) => {
-    const daysToShow = isMonthly ? 31 : 7;
-    const data = [];
-    for (let i = 0; i < daysToShow; i++) {
-      const entry = heatmap[i] || { count: Math.floor(Math.random() * 5) };
-      let lvl = 'low';
-      let color = '#00f2ff';
-      
-      if (entry.count >= 4) {
-        lvl = 'critical';
-        color = '#ff8aae';
-      } else if (entry.count >= 3) {
-        lvl = 'high';
-        color = '#ffb4ab';
-      } else if (entry.count >= 2) {
-        lvl = 'med';
-        color = '#D2FF00';
-      } else if (entry.count >= 1) {
-        lvl = 'low';
-        color = '#00f2ff';
-      } else {
-        lvl = 'empty';
-        color = 'rgba(255,255,255,0.05)';
-      }
-      
-      data.push({ 
-        day: DAYS[i % 7], 
-        date: i + 1, 
-        lvl, 
-        color,
-        val: entry.count 
-      });
+  // Sync modal dates when selectedDate changes in the grid
+  useEffect(() => {
+    if (selectedDate) {
+      const d = format(selectedDate, 'yyyy-MM-dd');
+      setNewEvent(prev => ({ ...prev, startDate: d, endDate: d }));
     }
-    return data;
+  }, [selectedDate]);
+
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    
+    // Prepare data
+    const startIso = `${newEvent.startDate}T${newEvent.startTime}:00`;
+    const endIso = `${newEvent.endDate}T${newEvent.endTime}:00`;
+    const payload = {
+      title: newEvent.title,
+      type: newEvent.type,
+      startTime: startIso,
+      endTime: endIso,
+      stressWeight: newEvent.stressWeight
+    };
+
+    // --- OPTIMISTIC UPDATE ---
+    const tempId = 'temp_' + Date.now();
+    const optimisticEvent = {
+      id: tempId,
+      ...payload,
+      source: 'manual'
+    };
+
+    // Close modal and update state immediately
+    setShowAddModal(false);
+    setHeatmap(prev => [...prev, optimisticEvent]);
+    
+    // Reset form
+    setNewEvent({ 
+      title: '', 
+      type: 'class', 
+      startDate: format(new Date(), 'yyyy-MM-dd'), 
+      endDate: format(new Date(), 'yyyy-MM-dd'), 
+      startTime: '', 
+      endTime: '', 
+      stressWeight: 3 
+    });
+
+    try {
+      const { data } = await api.post('/calendar', payload);
+      
+      // Update the temporary event with the real ID from the server
+      setHeatmap(prev => prev.map(ev => ev.id === tempId ? { ...ev, id: data.id } : ev));
+    } catch (err) {
+      console.error('Failed to add event:', err);
+      // ROLLBACK: Remove the optimistic event if the sync failed
+      setHeatmap(prev => prev.filter(ev => ev.id !== tempId));
+      alert('Neural sync failed. Your timeline has been rolled back.');
+    }
   };
 
-  const displayData = generateHeatmapData(view === 'monthly');
+  // Build view display
+  const displayData = useMemo(() => {
+    const today = new Date();
+    const intervalStart = view === 'monthly' ? startOfMonth(today) : startOfWeek(today, { weekStartsOn: 1 });
+    const intervalEnd = view === 'monthly' ? endOfMonth(today) : addDays(intervalStart, 6);
+    
+    const days = eachDayOfInterval({ start: intervalStart, end: intervalEnd });
+    
+    return days.map(day => {
+      const dayEvents = heatmap.filter(event => isSameDay(parseISO(event.startTime), day));
+      const totalWeight = dayEvents.reduce((acc, curr) => acc + curr.stressWeight, 0);
+      const count = dayEvents.length;
+      
+      // Calculate level based on total stress weight or count
+      let lvl = 'empty';
+      let color = 'rgba(255,255,255,0.05)';
+      
+      if (totalWeight >= 10 || count >= 5) {
+        lvl = 'critical';
+        color = '#ff8aae';
+      } else if (totalWeight >= 6 || count >= 3) {
+        lvl = 'high';
+        color = '#ffb4ab';
+      } else if (totalWeight >= 3 || count >= 2) {
+        lvl = 'med';
+        color = '#D2FF00';
+      } else if (totalWeight > 0 || count > 0) {
+        lvl = 'low';
+        color = '#00f2ff';
+      }
+      
+      return {
+        dateObj: day,
+        date: getDate(day),
+        day: format(day, 'EEE'),
+        lvl,
+        color,
+        val: totalWeight,
+        count
+      };
+    });
+  }, [view, heatmap]);
+
+  const selectedDayEvents = useMemo(() => {
+    return heatmap.filter(event => isSameDay(parseISO(event.startTime), selectedDate))
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  }, [selectedDate, heatmap]);
+
+  // Weekly metrics calculation
+  const weeklyMetrics = useMemo(() => {
+    const today = new Date();
+    const start = startOfWeek(today, { weekStartsOn: 1 });
+    const end = addDays(start, 6);
+    
+    const weekEvents = heatmap.filter(event => {
+      const d = parseISO(event.startTime);
+      return d >= start && d <= end;
+    });
+
+    const totalWeight = weekEvents.reduce((acc, curr) => acc + curr.stressWeight, 0);
+    // Theoretical max: 5 weight units * 3 events per day * 7 days = 105
+    // Let's normalize it so 40+ weight is "High Risk"
+    const riskScore = Math.min(100, Math.round((totalWeight / 40) * 100));
+    
+    let loadStatus = 'Optimal';
+    let loadColor = '#00f2ff';
+    if (riskScore >= 75) {
+      loadStatus = 'Heavy';
+      loadColor = '#ffb4ab';
+    } else if (riskScore >= 40) {
+      loadStatus = 'Moderate';
+      loadColor = '#D2FF00';
+    }
+
+    return {
+      riskScore,
+      loadStatus,
+      loadColor,
+      totalWeight,
+      count: weekEvents.length
+    };
+  }, [heatmap]);
+
+  // Deeply Tailored Smart Breaks
+  const smartBreaks = useMemo(() => {
+    const breaks = [];
+    if (selectedDayEvents.length === 0) return [{ icon:'bedtime', color:'#00f2ff', borderColor:'rgba(0,219,231,0.2)', bg:'rgba(0,219,231,0.1)', title:'Rest & Recharge', desc:'No events logged for today. Focus on deep recovery and sleep hygiene.' }];
+
+    const highLoadEvent = selectedDayEvents.find(ev => ev.stressWeight >= 4);
+    const totalDuration = selectedDayEvents.reduce((acc, ev) => acc + (new Date(ev.endTime) - new Date(ev.startTime)) / 60000, 0);
+
+    // 1. Post-Peak Recovery
+    if (highLoadEvent) {
+      breaks.push({ 
+        icon:'energy_savings_leaf', color:'#ffb4ab', borderColor:'rgba(255,180,171,0.2)', bg:'rgba(255,180,171,0.1)', 
+        title:'Post-Peak Reset', 
+        desc: `High-load session "${highLoadEvent.title}" detected. Schedule 15 mins of NSDR (Non-Sleep Deep Rest) immediately after.` 
+      });
+    }
+
+    // 2. Schedule Gaps
+    for (let i = 0; i < selectedDayEvents.length - 1; i++) {
+      const currentEnd = new Date(selectedDayEvents[i].endDate + 'T' + format(parseISO(selectedDayEvents[i].endTime), 'HH:mm')); // Simplified for logic
+      const nextStart = new Date(selectedDayEvents[i+1].startDate + 'T' + format(parseISO(selectedDayEvents[i+1].startTime), 'HH:mm'));
+      
+      const gapMin = (new Date(selectedDayEvents[i+1].startTime) - new Date(selectedDayEvents[i].endTime)) / 60000;
+      
+      if (gapMin >= 30) {
+        breaks.push({ 
+          icon:'timer', color:'#D2FF00', borderColor:'rgba(210,255,0,0.2)', bg:'rgba(210,255,0,0.1)', 
+          title:'Optimal Break Window', 
+          desc: `${Math.round(gapMin)}-minute gap found after "${selectedDayEvents[i].title}". Perfect for a mindful walk or hydration.` 
+        });
+        break; // Just one gap suggestion for now
+      }
+    }
+
+    // 3. Concentration Strategy
+    if (totalDuration > 180) {
+      breaks.push({ 
+        icon:'psychology', color:'#ebb2ff', borderColor:'rgba(235,178,255,0.2)', bg:'rgba(235,178,255,0.1)', 
+        title:'Deep Focus Protocol', 
+        desc: `You have ${Math.round(totalDuration/60)}h of work today. Use 90-minute focus blocks to prevent cognitive decline.` 
+      });
+    }
+
+    return breaks;
+  }, [selectedDayEvents, weeklyMetrics]);
 
   // Scroll parallax
   useEffect(() => {
@@ -111,6 +280,14 @@ export default function CalmCal() {
                 Monthly
               </button>
             </div>
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-xs terminal-text transition-all hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.2)]"
+              style={{ background:'linear-gradient(135deg, #00f2ff 0%, #006a71 100%)', color:'#001f22' }}
+            >
+              <span className="material-symbols-outlined text-sm">add_circle</span>
+              Add Event
+            </button>
           </header>
 
           {/* Bento Grid */}
@@ -131,13 +308,13 @@ export default function CalmCal() {
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: i * 0.01 }}
-                      onClick={() => setSelectedDate(item.date)}
-                      className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all duration-300 hover:scale-110 cursor-pointer group ${selectedDate === item.date ? 'ring-2 ring-white/20' : ''}`}
+                      onClick={() => setSelectedDate(item.dateObj)}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all duration-300 hover:scale-110 cursor-pointer group ${isSameDay(selectedDate, item.dateObj) ? 'ring-2 ring-white/20' : ''}`}
                       style={{ 
-                        background: selectedDate === item.date ? `${item.color}30` : (item.lvl === 'empty' ? 'rgba(255,255,255,0.03)' : `${item.color}15`),
-                        border: `1px solid ${selectedDate === item.date ? item.color : (item.lvl === 'empty' ? 'rgba(255,255,255,0.05)' : `${item.color}30`)}`,
+                         background: isSameDay(selectedDate, item.dateObj) ? `${item.color}30` : (item.lvl === 'empty' ? 'rgba(255,255,255,0.03)' : `${item.color}15`),
+                        border: `1px solid ${isSameDay(selectedDate, item.dateObj) ? item.color : (item.lvl === 'empty' ? 'rgba(255,255,255,0.05)' : `${item.color}30`)}`,
                         boxShadow: item.lvl === 'critical' ? `0 0 15px ${item.color}20` : 'none',
-                        zIndex: selectedDate === item.date ? 20 : 1
+                        zIndex: isSameDay(selectedDate, item.dateObj) ? 20 : 1
                       }}
                     >
                       <span className="font-bold text-sm" style={{ color: item.lvl === 'empty' ? '#4a4a4b' : item.color }}>{item.date}</span>
@@ -148,7 +325,7 @@ export default function CalmCal() {
                       <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none">
                         <div className="bg-[#0e0e0f] border border-white/10 rounded-lg px-3 py-2 text-[10px] terminal-text whitespace-nowrap shadow-2xl">
                           <span className="font-bold uppercase tracking-widest" style={{ color: item.color }}>{item.lvl}_STATE</span>
-                          <div className="text-[#b9cacb] mt-0.5">Stress Level: {item.val}/5</div>
+                          <div className="text-[#b9cacb] mt-0.5">Stress Level: {item.val}/10</div>
                         </div>
                       </div>
                     </motion.div>
@@ -177,39 +354,42 @@ export default function CalmCal() {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="rounded-3xl p-8 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Flow: Oct {selectedDate}</h3>
+                    <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Flow: {format(selectedDate, 'MMM d')}</h3>
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border" style={{ background:'rgba(0,219,231,0.1)', borderColor:'rgba(0,219,231,0.2)' }}>
                       <span className="w-1.5 h-1.5 rounded-full sync-protocol" style={{ background:'#e1fdff' }} />
                       <span className="text-[10px] font-bold terminal-text tracking-widest" style={{ color:'#e1fdff' }}>Sync Protocol</span>
                     </div>
                   </div>
-                  <span className="px-4 py-1 rounded-full text-xs terminal-text border" style={{ background:'rgba(255,180,171,0.1)', color:'#ffb4ab', borderColor:'rgba(255,180,171,0.3)' }}>Critical Load</span>
+                  <span className="px-4 py-1 rounded-full text-xs terminal-text border" style={{ background:'rgba(255,180,171,0.1)', color:'#ffb4ab', borderColor:'rgba(255,180,171,0.3)' }}>{selectedDayEvents.length} Events</span>
                 </div>
                 <div className="space-y-6 relative ml-4 pl-8" style={{ borderLeft:'2px solid rgba(255,255,255,0.08)' }}>
-                  {[
-                    { time:'09:00 AM', title:'Advanced Neuro-Algorithms Lecture', desc:'High cognitive load. Prepare for complex conceptual mapping.', dur:'60 MIN', color:'#e1fdff', alert:false },
-                    { time:'11:30 AM', title:'Project Deadline: AI Ethics Beta', desc:'Critical stress trigger. Heart rate variability likely to decrease.', dur:'Due Now', color:'#ffb4ab', alert:true },
-                    { time:'02:00 PM', title:'MindFlow Meditation', desc:'Guided somatic release session to mitigate deadline fatigue.', dur:'30 MIN', color:'#00f2ff', alert:false, recommended:true },
-                  ].map((item, i) => (
+                  {selectedDayEvents.length > 0 ? selectedDayEvents.map((item, i) => (
                     <div key={i} className="timeline-item relative group py-2">
                       <div className="absolute w-5 h-5 rounded-full border-2 sync-protocol transition-colors"
-                        style={{ left:-42, top:16, background:'#0e0e0f', borderColor: item.alert ? '#ffb4ab' : item.color, boxShadow: item.alert ? '0 0 10px #ffb4ab' : 'none' }} />
+                        style={{ left:-42, top:16, background:'#0e0e0f', borderColor: item.stressWeight >= 4 ? '#ffb4ab' : '#e1fdff', boxShadow: item.stressWeight >= 4 ? '0 0 10px #ffb4ab' : 'none' }} />
                       <div className="timeline-drawer rounded-2xl p-5 border transition-all"
-                        style={{ background: item.alert ? 'rgba(255,180,171,0.05)' : 'rgba(14,14,15,0.65)', backdropFilter:'blur(8px)', borderColor: item.alert ? 'rgba(255,180,171,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                        style={{ background: item.stressWeight >= 4 ? 'rgba(255,180,171,0.05)' : 'rgba(14,14,15,0.65)', backdropFilter:'blur(8px)', borderColor: item.stressWeight >= 4 ? 'rgba(255,180,171,0.2)' : 'rgba(255,255,255,0.08)' }}>
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="text-xs terminal-text mb-1" style={{ color:item.color }}>{item.time}</p>
-                            <h5 className="font-bold text-lg" style={{ fontFamily:'Space Grotesk', color: item.alert ? '#ffb4ab' : '#e1fdff' }}>{item.title}</h5>
-                            <p className="text-sm" style={{ color:'#b9cacb' }}>{item.desc}</p>
+                            <p className="text-xs terminal-text mb-1" style={{ color:'#e1fdff' }}>{format(parseISO(item.startTime), 'hh:mm a')}</p>
+                            <h5 className="font-bold text-lg" style={{ fontFamily:'Space Grotesk', color: item.stressWeight >= 4 ? '#ffb4ab' : '#e1fdff' }}>{item.title}</h5>
+                            <p className="text-sm opacity-60" style={{ color:'#b9cacb' }}>Weight: {item.stressWeight}</p>
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            <span className="px-3 py-1 rounded-lg text-[10px] font-bold terminal-text" style={{ background:'rgba(42,42,43,0.8)', color:'#b9cacb' }}>{item.dur}</span>
-                            {item.recommended && <span className="text-[10px] font-bold italic" style={{ color:'#D2FF00' }}>Recommended</span>}
+                            <span className="px-3 py-1 rounded-lg text-[10px] font-bold terminal-text" style={{ background:'rgba(42,42,43,0.8)', color:'#b9cacb' }}>
+                              {Math.round((new Date(item.endTime) - new Date(item.startTime)) / 60000)} MIN
+                            </span>
+                            {item.type === 'recovery' && <span className="text-[10px] font-bold italic" style={{ color:'#D2FF00' }}>Recommended</span>}
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-12 opacity-40">
+                      <span className="material-symbols-outlined text-4xl mb-2">calendar_today</span>
+                      <p className="terminal-text text-sm">NO_EVENTS_LOGGED_FOR_THIS_INTERVAL</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -217,30 +397,52 @@ export default function CalmCal() {
             {/* Right sidebar panel */}
             <aside className="lg:col-span-4 space-y-8">
               {/* Burnout Ring */}
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="rounded-3xl p-8 border-t-2 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)', borderTop:'2px solid rgba(255,180,171,0.5)' }}>
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="rounded-3xl p-8 border-t-2 shadow-2xl" 
+                style={{ 
+                  background:'rgba(14,14,15,0.65)', 
+                  backdropFilter:'blur(24px)', 
+                  border:'1px solid rgba(255,255,255,0.1)', 
+                  borderTop:`2px solid ${weeklyMetrics.loadColor}80` 
+                }}>
                 <div className="flex items-center gap-4 mb-6">
-                  <span className="material-symbols-outlined" style={{ color:'#ffb4ab' }}>warning</span>
+                  <span className="material-symbols-outlined" style={{ color: weeklyMetrics.loadColor }}>{weeklyMetrics.riskScore >= 75 ? 'warning' : 'bolt'}</span>
                   <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Weekly Burnout</h3>
                 </div>
                 <div className="relative h-48 flex items-center justify-center mb-6">
                   <svg className="w-40 h-40 -rotate-90">
                     <circle cx="80" cy="80" r="70" fill="transparent" stroke="rgba(42,42,43,1)" strokeWidth="8" />
-                    <circle cx="80" cy="80" r="70" fill="transparent" stroke="#ffb4ab" strokeDasharray="440" strokeDashoffset="110" strokeLinecap="round" strokeWidth="12" />
+                    <circle 
+                      cx="80" cy="80" r="70" fill="transparent" stroke={weeklyMetrics.loadColor} 
+                      strokeDasharray="440" 
+                      strokeDashoffset={440 - (440 * weeklyMetrics.riskScore) / 100} 
+                      strokeLinecap="round" strokeWidth="12" 
+                      className="transition-all duration-1000 ease-out"
+                    />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-4xl font-bold" style={{ color:'#ffb4ab' }}>75%</span>
-                    <span className="text-xs terminal-text" style={{ color:'#b9cacb' }}>HIGH RISK</span>
+                    <span className="text-4xl font-bold transition-all" style={{ color: weeklyMetrics.loadColor }}>{weeklyMetrics.riskScore}%</span>
+                    <span className="text-[10px] terminal-text uppercase tracking-widest" style={{ color:'#b9cacb' }}>
+                      {weeklyMetrics.riskScore >= 75 ? 'High Risk' : weeklyMetrics.riskScore >= 40 ? 'Moderate' : 'Stable'}
+                    </span>
                   </div>
                 </div>
                 <div className="space-y-4">
-                  {[['Academic Load','Heavy','#e1fdff',85],['Sleep Reserve','Low','#ffb4ab',30]].map(([k,v,c,w]) => (
+                  {[
+                    ['Academic Load', weeklyMetrics.loadStatus, weeklyMetrics.loadColor, weeklyMetrics.riskScore],
+                    ['Sleep Reserve', weeklyMetrics.riskScore > 80 ? 'Critical' : 'Normal', weeklyMetrics.riskScore > 80 ? '#ffb4ab' : '#e1fdff', 100 - weeklyMetrics.riskScore]
+                  ].map(([k,v,c,w]) => (
                     <div key={k}>
                       <div className="flex justify-between items-center text-xs terminal-text mb-1">
                         <span style={{ color:'#e5e2e3' }}>{k}</span>
                         <span className="font-bold" style={{ color:c }}>{v}</span>
                       </div>
                       <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(42,42,43,1)' }}>
-                        <div className="h-full rounded-full" style={{ width:`${w}%`, background:c }} />
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${w}%` }}
+                          className="h-full rounded-full" 
+                          style={{ background:c }} 
+                        />
                       </div>
                     </div>
                   ))}
@@ -254,11 +456,7 @@ export default function CalmCal() {
                   <span className="material-symbols-outlined cursor-pointer hover:text-[#e1fdff] transition-colors" style={{ color:'#b9cacb' }}>info</span>
                 </div>
                 <div className="space-y-4">
-                  {[
-                    { icon:'visibility', color:'#e1fdff', borderColor:'rgba(0,219,231,0.2)', bg:'rgba(0,219,231,0.1)', title:'20-20-20 Rule', desc:'Counteract digital eye strain. Look 20ft away for 20s every 20m.' },
-                    { icon:'directions_walk', color:'#D2FF00', borderColor:'rgba(210,255,0,0.2)', bg:'rgba(210,255,0,0.1)', title:'Sunlight Reset', desc:'10-minute exposure at 1:00 PM to recalibrate circadian rhythm.' },
-                    { icon:'audio_file', color:'#ebb2ff', borderColor:'rgba(235,178,255,0.2)', bg:'rgba(235,178,255,0.1)', title:'Pink Noise', desc:'Ambient textures to stabilize focus during upcoming peak load.' },
-                  ].map(item => (
+                  {smartBreaks.map(item => (
                     <div key={item.title} className="smart-break-card p-5 rounded-2xl cursor-pointer group border"
                       style={{ background:'rgba(255,255,255,0.02)', borderColor:'rgba(255,255,255,0.05)' }}>
                       <div className="flex items-center gap-4 mb-2">
@@ -271,6 +469,9 @@ export default function CalmCal() {
                       <p className="text-sm" style={{ color:'#b9cacb' }}>{item.desc}</p>
                     </div>
                   ))}
+                  {smartBreaks.length === 0 && (
+                    <p className="text-center text-xs terminal-text opacity-40 py-4">NO_SUGGESTIONS_PENDING</p>
+                  )}
                 </div>
               </motion.div>
             </aside>
@@ -287,6 +488,131 @@ export default function CalmCal() {
         </div>
         <p className="text-xs terminal-text opacity-50" style={{ color:'#b9cacb' }}>© 2024 MindFlow Ecosystem. Elevate your consciousness.</p>
       </footer>
+
+      {/* Add Event Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAddModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg rounded-[2.5rem] p-10 border shadow-2xl overflow-hidden"
+              style={{ background:'rgba(14,14,15,0.95)', borderColor:'rgba(255,255,255,0.1)' }}
+            >
+              <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ background:'radial-gradient(circle at top right, #00f2ff, transparent)' }} />
+              
+              <div className="flex justify-between items-start mb-8 relative z-10">
+                <div>
+                  <h3 className="text-3xl font-bold" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Add Event</h3>
+                  <p className="text-xs terminal-text mt-1" style={{ color:'#D2FF00' }}>[ DATE_SYNC: {format(selectedDate, 'yyyy-MM-dd')} ]</p>
+                </div>
+                <button onClick={() => setShowAddModal(false)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <span className="material-symbols-outlined" style={{ color:'#b9cacb' }}>close</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleAddEvent} className="space-y-6 relative z-10">
+                <div className="space-y-2">
+                  <label className="text-[10px] terminal-text uppercase tracking-widest ml-2" style={{ color:'#b9cacb' }}>Event Title</label>
+                  <input 
+                    required
+                    type="text" 
+                    placeholder="e.g. Advanced Neuro-Algorithms"
+                    value={newEvent.title}
+                    onChange={e => setNewEvent({...newEvent, title: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-[#00f2ff]/50 transition-all"
+                    style={{ color:'#e5e2e3' }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] terminal-text uppercase tracking-widest ml-2" style={{ color:'#b9cacb' }}>Start Date</label>
+                    <input 
+                      required
+                      type="date" 
+                      value={newEvent.startDate}
+                      onChange={e => setNewEvent({...newEvent, startDate: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-[#00f2ff]/50 transition-all"
+                      style={{ color:'#e5e2e3', colorScheme:'dark' }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] terminal-text uppercase tracking-widest ml-2" style={{ color:'#b9cacb' }}>End Date</label>
+                    <input 
+                      required
+                      type="date" 
+                      value={newEvent.endDate}
+                      onChange={e => setNewEvent({...newEvent, endDate: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-[#00f2ff]/50 transition-all"
+                      style={{ color:'#e5e2e3', colorScheme:'dark' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] terminal-text uppercase tracking-widest ml-2" style={{ color:'#b9cacb' }}>Start Time</label>
+                    <input 
+                      required
+                      type="time" 
+                      value={newEvent.startTime}
+                      onChange={e => setNewEvent({...newEvent, startTime: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-[#00f2ff]/50 transition-all"
+                      style={{ color:'#e5e2e3', colorScheme:'dark' }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] terminal-text uppercase tracking-widest ml-2" style={{ color:'#b9cacb' }}>End Time</label>
+                    <input 
+                      required
+                      type="time" 
+                      value={newEvent.endTime}
+                      onChange={e => setNewEvent({...newEvent, endTime: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-[#00f2ff]/50 transition-all"
+                      style={{ color:'#e5e2e3', colorScheme:'dark' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex justify-between items-center px-2">
+                    <label className="text-[10px] terminal-text uppercase tracking-widest" style={{ color:'#b9cacb' }}>Neural Load / Stress Weight</label>
+                    <span className="font-bold text-lg" style={{ color: newEvent.stressWeight >= 4 ? '#ffb4ab' : '#00f2ff' }}>{newEvent.stressWeight}</span>
+                  </div>
+                  <input 
+                    type="range" min="1" max="5" step="1"
+                    value={newEvent.stressWeight}
+                    onChange={e => setNewEvent({...newEvent, stressWeight: parseInt(e.target.value)})}
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00f2ff]"
+                  />
+                  <div className="flex justify-between px-1 text-[8px] terminal-text opacity-40" style={{ color:'#b9cacb' }}>
+                    <span>LOW_LOAD</span>
+                    <span>CRITICAL_PEAK</span>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-5 rounded-2xl font-bold text-sm tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
+                  style={{ background:'linear-gradient(135deg, #00f2ff 0%, #006a71 100%)', color:'#001f22', boxShadow:'0 10px 30px rgba(0,242,255,0.2)' }}
+                >
+                  SYNC_TO_CALENDAR
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

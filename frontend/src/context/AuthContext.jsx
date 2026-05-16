@@ -7,6 +7,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   updateProfile,
   getAdditionalUserInfo,
 } from 'firebase/auth';
@@ -49,6 +51,20 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
+
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const { data: profile } = await api.get('/users/me');
+          setUser({ ...result.user, ...profile });
+          setRole(profile.role || 'student');
+        }
+      } catch (err) {
+        console.error('Redirect login error:', err);
+      }
+    };
+    checkRedirect();
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -117,21 +133,8 @@ export function AuthProvider({ children }) {
       signInDemo(false);
       return;
     }
-    const cred = await signInWithPopup(auth, googleProvider);
-    const isNewUser = getAdditionalUserInfo(cred)?.isNewUser;
-    
-    // If returning user, fetch profile; if new, we'll create it during onboarding
-    let profile = { role: 'student' };
-    if (!isNewUser) {
-      try {
-        const res = await api.get('/users/me');
-        profile = res.data;
-      } catch (e) { console.error("Google login profile fetch failed:", e); }
-    }
-    
-    setUser({ ...cred.user, ...profile });
-    setRole(profile.role || 'student');
-    return { isNewUser };
+    // Switch to redirect to avoid popup-blocked errors
+    await signInWithRedirect(auth, googleProvider);
   };
 
   const updateUserProfile = async (updates) => {

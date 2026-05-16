@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
@@ -64,10 +64,12 @@ export default function Auth() {
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-10">
-          <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full"
+        <Link to="/" className="block w-fit mx-auto">
+          <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95 cursor-pointer"
                style={{ background: '#D2FF00', boxShadow: '0 0 30px rgba(210,255,0,0.3)' }}>
             <span className="material-symbols-outlined text-[#020202]" style={{ fontSize: 32, fontVariationSettings: "'FILL' 1" }}>psychology</span>
           </div>
+        </Link>
           <h1 className="font-bold tracking-tight mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 36, color: '#e1fdff' }}>
             Welcome to MindFlow
           </h1>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../lib/api';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -6,28 +6,31 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { calculateBurnoutScore } from '../lib/burnoutEngine';
+import { parseISO, format, startOfWeek, isSameWeek } from 'date-fns';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [burnout, setBurnout] = useState(null);
   const [history, setHistory] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [scoreRes, historyRes] = await Promise.all([
+        const [scoreRes, historyRes, calendarRes] = await Promise.all([
           api.get('/burnout/me'),
           api.get('/burnout/me/history'),
+          api.get('/calendar/me')
         ]);
         
         if (scoreRes.data.hasData) {
           setBurnout({
             score: scoreRes.data.score,
             level: scoreRes.data.riskLevel,
-            advice: [] // Optional advice if backend provides it
+            advice: scoreRes.data.recommendations || []
           });
         } else {
-          // Fallback for first-time users
           setBurnout(calculateBurnoutScore({ mood:7, sleep:7, workload:4, stress:3 }));
         }
 
@@ -35,13 +38,31 @@ export default function Dashboard() {
           score: h.score,
           date: h.calculatedAt
         })));
+
+        setEvents(calendarRes.data);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
-        setBurnout(calculateBurnoutScore({ mood:7, sleep:7, workload:4, stress:3 }));
+        // Silently fail for polling, but keep old data
+      } finally {
+        setLoading(false);
       }
     }
+    
     load();
+    const poll = setInterval(load, 30000); // Sync every 30s for real-time feel
+    return () => clearInterval(poll);
   }, [user]);
+
+  // Real-time Academic Load Calculation (Weekly)
+  const academicLoad = useMemo(() => {
+    if (!events.length) return { score: 30, label: 'Stable' };
+    const totalWeight = events.reduce((acc, curr) => acc + (curr.stressWeight || 0), 0);
+    const score = Math.min(100, Math.round((totalWeight / 40) * 100));
+    return {
+      score,
+      label: score > 75 ? 'Critical' : score > 40 ? 'Heavy' : 'Optimal'
+    };
+  }, [events]);
 
 
 
@@ -49,11 +70,24 @@ export default function Dashboard() {
   const label = score < 30 ? 'Zen' : score < 60 ? 'Aware' : 'Strained';
   const sublabel = score < 30 ? 'OPTIMAL FLOW STATE' : score < 60 ? 'MONITOR CLOSELY' : 'TAKE A BREAK';
 
-  // Build 7-day chart data from history
+  // Build 7-day academic load chart from real events
   const days = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
-  const chartHeights = history.length >= 7
-    ? history.slice(-7).map(h => Math.max(10, Math.min(90, h.score || 30)))
-    : [22,35,12,88,80,55,40];
+  const chartHeights = useMemo(() => {
+    const weights = new Array(7).fill(0);
+    const now = new Date();
+    const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+
+    events.forEach(ev => {
+      const d = parseISO(ev.startTime);
+      if (isSameWeek(d, now, { weekStartsOn: 1 })) {
+        const dayIdx = (d.getDay() + 6) % 7; // Map Sun=0 to 6, Mon=1 to 0
+        weights[dayIdx] += (ev.stressWeight || 0);
+      }
+    });
+
+    // Normalize: let's say a 'max' day is 15 weight units
+    return weights.map(w => Math.max(10, Math.min(95, (w / 15) * 100)));
+  }, [events]);
 
   return (
     <div style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
@@ -104,11 +138,11 @@ export default function Dashboard() {
                 {/* Stats row */}
                 <div className="mt-12 flex gap-12 z-10 w-full justify-center">
                   {[['STRESS_LEVEL', score < 30 ? 'LOW' : score < 60 ? 'MED' : 'HIGH'],
-                    ['FLOW_STATE', score < 40 ? 'ACTIVE' : 'REDUCED'],
-                    ['SLEEP_QLTY', `${Math.round(100 - score * 0.4)}%`]].map(([k,v]) => (
+                    ['ACADEMIC_LOAD', academicLoad.label.toUpperCase()],
+                    ['SLEEP_QLTY', `${Math.max(15, Math.round(100 - score * 0.8))}%`]].map(([k,v]) => (
                     <div key={k} className="text-center group cursor-default">
                       <p className="text-[10px] terminal-text opacity-60 mb-1" style={{ color:'#b9cacb' }}>{k}</p>
-                      <p className="font-semibold text-2xl transition-colors" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>{v}</p>
+                      <p className="font-semibold text-2xl transition-colors" style={{ fontFamily:'Space Grotesk', color: (v === 'HIGH' || v === 'CRITICAL') ? '#ffb4ab' : '#e1fdff' }}>{v}</p>
                     </div>
                   ))}
                 </div>
@@ -145,16 +179,21 @@ export default function Dashboard() {
                     <h3 className="font-semibold text-xl tracking-tight" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Predictive Mesh Insights</h3>
                   </div>
                   <div className="space-y-6">
-                    <div className="relative pl-6" style={{ borderLeft:'2px solid rgba(210,255,0,0.3)', paddingLeft:24 }}>
-                      <p className="text-[9px] terminal-text mb-1 tracking-[0.2em]" style={{ color:'#D2FF00' }}>PROACTIVE ALERT</p>
-                      <p className="text-sm leading-relaxed opacity-90" style={{ color:'#e5e2e3' }}>
-                        {score > 60 ? 'Critical burnout risk detected. Consider scheduling a recovery session.' : 'Stress peaks predicted for Thursday due to combined deadlines.'}
-                      </p>
-                    </div>
-                    <div className="relative pl-6" style={{ borderLeft:'2px solid rgba(0,219,231,0.3)', paddingLeft:24 }}>
-                      <p className="text-[9px] terminal-text mb-1 tracking-[0.2em]" style={{ color:'#e1fdff' }}>SUGGESTION</p>
-                      <p className="text-sm leading-relaxed opacity-90" style={{ color:'#e5e2e3' }}>Focus score was highest during 9:00 AM. Replicate lighting environment?</p>
-                    </div>
+                    {burnout?.advice && burnout.advice.length > 0 ? (
+                      burnout.advice.slice(0, 2).map((a, i) => (
+                        <div key={i} className="relative pl-6" style={{ borderLeft: `2px solid ${i === 0 ? 'rgba(210,255,0,0.3)' : 'rgba(0,219,231,0.3)'}`, paddingLeft:24 }}>
+                          <p className="text-[9px] terminal-text mb-1 tracking-[0.2em]" style={{ color: i === 0 ? '#D2FF00' : '#e1fdff' }}>{i === 0 ? 'PROACTIVE ALERT' : 'SUGGESTION'}</p>
+                          <p className="text-sm leading-relaxed opacity-90" style={{ color:'#e5e2e3' }}>{a}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="relative pl-6" style={{ borderLeft:'2px solid rgba(210,255,0,0.3)', paddingLeft:24 }}>
+                          <p className="text-[9px] terminal-text mb-1 tracking-[0.2em]" style={{ color:'#D2FF00' }}>INITIALIZING_MESH</p>
+                          <p className="text-sm leading-relaxed opacity-90" style={{ color:'#e5e2e3' }}>Analyzing your neural patterns. Complete a check-in for deep insights.</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <Link to="/calmcal">
                     <button className="mt-8 text-[10px] terminal-text font-bold flex items-center gap-2 transition-all hover:opacity-100 opacity-80 group" style={{ color:'#e1fdff' }}>
@@ -166,75 +205,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Lower Section — CalmCal preview */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="relative z-20 mt-20 rounded-3xl p-6 lg:p-8 mb-12 border"
-            style={{ background:'rgba(14,14,15,0.9)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.1)', boxShadow:'0 -30px 60px rgba(0,0,0,0.6)' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* CalmCal Bar Chart */}
-              <div className="lg:col-span-7 glass-panel rounded-[2rem] p-10 overflow-hidden hud-border">
-                <div className="flex justify-between items-center mb-10">
-                  <div>
-                    <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>CalmCal Visualizer</h3>
-                    <p className="text-xs opacity-60 tracking-wider terminal-text" style={{ color:'#b9cacb' }}>ACADEMIC_CYCLE // STRESS TRAJECTORY</p>
-                  </div>
-                  <div className="flex gap-3">
-                    {['#D2FF00','rgba(0,219,231,0.5)','rgba(255,180,171,0.5)'].map((c,i) => (
-                      <div key={i} className="w-2 h-2 rounded-full" style={{ background:c, boxShadow:`0 0 8px ${c}` }} />
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-7 gap-6 h-48 items-end relative">
-                  <div className="absolute inset-0 flex flex-col justify-between opacity-10 pointer-events-none">
-                    {[0,1,2,3].map(i => <div key={i} className="h-px w-full bg-white" />)}
-                  </div>
-                  {chartHeights.map((h, i) => (
-                    <div key={i} className="rounded-t-lg border-x border-t hover:opacity-80 transition-all relative group"
-                      style={{ height:`${h}%`, background: h > 70 ? 'rgba(210,255,0,0.3)' : h > 50 ? 'rgba(255,180,171,0.2)' : 'rgba(0,219,231,0.15)', borderColor: h > 70 ? 'rgba(210,255,0,0.2)' : 'rgba(255,255,255,0.05)' }}>
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] terminal-text px-2 py-1 rounded"
-                        style={{ background:'rgba(0,0,0,0.8)', color:'#D2FF00' }}>{days[i]}: {h}%</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-6 mt-4 text-center">
-                  {days.map((d, i) => (
-                    <span key={d} className="text-[10px] terminal-text font-bold" style={{ color: chartHeights[i] > 70 ? '#e1fdff' : 'rgba(185,202,203,0.4)' }}>{d}</span>
-                  ))}
-                </div>
-              </div>
 
-              {/* Featured resource */}
-              <div className="lg:col-span-5 rounded-[2rem] overflow-hidden relative group glass-panel">
-                <div className="absolute inset-0 flex items-center justify-center" style={{ background:'linear-gradient(135deg, rgba(0,219,231,0.05) 0%, rgba(210,255,0,0.05) 50%, rgba(0,0,0,0.8) 100%)' }}>
-                  <span className="material-symbols-outlined text-[120px] opacity-10" style={{ color:'#e1fdff' }}>self_improvement</span>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                  <p className="text-[9px] terminal-text mb-3 tracking-[0.3em]" style={{ color:'#D2FF00' }}>MINDSET_DISCOVERY_04</p>
-                  <h4 className="font-semibold text-2xl text-white mb-6 leading-tight" style={{ fontFamily:'Space Grotesk' }}>Mastering Deep Work in Academic Cycles</h4>
-                  <button className="border px-8 py-3 rounded-full text-[10px] terminal-text transition-all duration-300 hover:bg-[#D2FF00] hover:text-black"
-                    style={{ background:'rgba(255,255,255,0.1)', backdropFilter:'blur(20px)', borderColor:'rgba(255,255,255,0.2)', color:'white' }}>
-                    COMMENCE_SESSION
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-12 px-6 flex flex-col md:flex-row justify-between items-center gap-2 border-t md:ml-64"
-        style={{ background:'rgba(14,14,15,0.9)', borderColor:'rgba(255,255,255,0.05)', width:'calc(100% - 0px)' }}>
-        <div>
-          <span className="font-bold tracking-tighter opacity-60" style={{ fontFamily:'Space Grotesk', fontSize:20, color:'#e1fdff' }}>MindFlow_EcoSys</span>
-          <p className="text-[9px] terminal-text opacity-50 mt-1" style={{ color:'#b9cacb' }}>© 2024 NEURAL INTERFACE. ELEVATE CONSCIOUSNESS.</p>
-        </div>
-        <div className="flex gap-8">
-          {['PRIVACY','ETHICS_AI','RESEARCH','CONTACT'].map(l => (
-            <a key={l} href="#" className="text-[9px] terminal-text opacity-60 hover:opacity-100 hover:text-[#D2FF00] transition-all tracking-widest" style={{ color:'#b9cacb' }}>{l}</a>
-          ))}
-        </div>
-      </footer>
     </div>
   );
 }

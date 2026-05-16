@@ -65,7 +65,7 @@ function AppRoutes() {
   const location = useLocation();
   const { user, role } = useAuth();
   // Only Auth and Onboarding use the old global nav/bg system
-  const showNav = ['/onboarding', '/checkin', '/auth'].includes(location.pathname);
+  const showNav = ['/onboarding', '/checkin'].includes(location.pathname);
 
   return (
     <SmoothScroll>

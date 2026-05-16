@@ -479,15 +479,7 @@ export default function CalmCal() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-12 px-6 flex flex-col md:flex-row justify-between items-center gap-2 border-t"
-        style={{ background:'rgba(14,14,15,0.9)', borderColor:'rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined" style={{ color:'#e1fdff', fontVariationSettings:"'FILL' 1" }}>psychology</span>
-          <span className="font-bold" style={{ fontFamily:'Space Grotesk', fontSize:18, color:'#e1fdff' }}>MindFlow</span>
-        </div>
-        <p className="text-xs terminal-text opacity-50" style={{ color:'#b9cacb' }}>© 2024 MindFlow Ecosystem. Elevate your consciousness.</p>
-      </footer>
+
 
       {/* Add Event Modal */}
       <AnimatePresence>

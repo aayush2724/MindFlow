@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -49,29 +50,7 @@ export default function CalmCal() {
   return (
     <div className="obsidian-grid" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="calmcal" />
-
-      {/* Top Nav */}
-      <nav className="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-6 py-4 border-b"
-        style={{ background:'rgba(14,14,15,0.6)', backdropFilter:'blur(20px)', borderColor:'rgba(255,255,255,0.08)', boxShadow:'0 0 15px rgba(0,219,231,0.1)' }}>
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined" style={{ color:'#D2FF00', fontVariationSettings:"'FILL' 1" }}>psychology</span>
-          <span className="font-bold tracking-tight" style={{ fontFamily:'Space Grotesk', fontSize:20, color:'#e1fdff' }}>MindFlow</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8">
-          {[['Dashboard','/dashboard'],['MoodMap','/checkin'],['CalmCal','/calmcal'],['Resources','#']].map(([l,to]) => (
-            <Link key={l} to={to} className="text-xs terminal-text font-semibold transition-colors duration-300"
-              style={{ color: l==='CalmCal' ? '#e1fdff' : '#b9cacb', borderBottom: l==='CalmCal' ? '2px solid #D2FF00' : 'none', paddingBottom:4 }}>{l}</Link>
-          ))}
-        </div>
-        <div className="flex items-center gap-6">
-          <span className="material-symbols-outlined cursor-pointer hover:text-[#e1fdff] transition-all" style={{ color:'#b9cacb' }}>notifications</span>
-          <div className="w-10 h-10 rounded-full overflow-hidden border" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
-            <div className="w-full h-full flex items-center justify-center font-bold text-sm" style={{ background:'rgba(0,219,231,0.2)', color:'#e1fdff' }}>
-              {(user?.displayName || 'A')[0]}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header title="MindFlow" subtext="SYNC_PROTOCOL: ACTIVE" />
 
       {/* Main Canvas */}
       <main className="md:pl-64 pt-24 min-h-screen">

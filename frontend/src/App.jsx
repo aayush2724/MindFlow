@@ -13,6 +13,7 @@ import Resources from './pages/Resources';
 import Community from './pages/Community';
 import Alerts from './pages/Alerts';
 import Departments from './pages/Departments';
+import Settings from './pages/Settings';
 import SmoothScroll from './components/SmoothScroll';
 import CustomCursor from './components/CustomCursor';
 
@@ -169,6 +170,9 @@ function AppRoutes() {
           } />
           <Route path="/departments" element={
             <ProtectedRoute onlyRole="counselor"><PageTransition><Departments /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/account-settings" element={
+            <ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

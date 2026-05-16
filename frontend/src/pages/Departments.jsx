@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 import { motion } from 'framer-motion';
 
 const RISK_MAP = {
@@ -15,8 +16,6 @@ export default function Departments() {
   const [stats, setStats] = useState({ campusAverageBurnout: 0, highRiskCount: 0, checkInRate: 0, totalStudents: 0 });
   const [selectedDept, setSelectedDept] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifMenu, setShowNotifMenu] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -51,83 +50,7 @@ export default function Departments() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="departments" />
-
-      {/* Top Nav */}
-      <nav className="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-6 py-4 border-b"
-        style={{ background:'rgba(19,19,20,0.6)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-2">
-          <span className="font-bold tracking-tight" style={{ fontFamily:'Space Grotesk', fontSize:20, color:'#e1fdff' }}>MindFlow</span>
-          <span className="hidden md:block text-[10px] terminal-text px-2 py-0.5 rounded border" style={{ color:'#b9cacb', background:'rgba(32,31,32,0.5)', borderColor:'rgba(255,255,255,0.08)' }}>SYS_ID: DEPT_INTEL_v1.0</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex items-center rounded-lg px-4 py-1.5 gap-3 border" style={{ background:'rgba(14,14,15,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
-            <span className="material-symbols-outlined text-[20px]" style={{ color:'#e1fdff' }}>search</span>
-            <input className="bg-transparent border-none outline-none text-sm terminal-text w-48 placeholder:opacity-40" style={{ color:'#e5e2e3' }} placeholder="SEARCH_DEPARTMENTS..." />
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <motion.button 
-                whileHover={{ scale: 1.2, rotate: 15 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowNotifMenu(!showNotifMenu)}
-                className="relative p-2"
-              >
-                <span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color:'#b9cacb' }}>notifications</span>
-                <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-black" />
-              </motion.button>
-              {showNotifMenu && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute top-12 right-0 w-80 glass-panel rounded-2xl p-6 border shadow-2xl z-50"
-                  style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(14,14,15,0.95)', backdropFilter: 'blur(24px)' }}
-                >
-                  <h4 className="text-xs font-bold tracking-[0.2em] mb-4 text-[#e1fdff]">SYS_LOG_NOTIFICATIONS</h4>
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/5">
-                    <p className="text-[10px] terminal-text text-[#00dbe7] mb-1">INTEL_UPDATE</p>
-                    <p className="text-xs opacity-70">New aggregate data available for Fine Arts.</p>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-
-            <div className="relative">
-              <motion.div 
-                whileHover={{ scale: 1.1, borderColor: '#00dbe7' }}
-                className="w-10 h-10 rounded-full border p-0.5 cursor-pointer" 
-                style={{ borderColor:'rgba(0,219,231,0.3)' }}
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-sm" style={{ background:'rgba(0,219,231,0.2)', color:'#e1fdff' }}>C</div>
-              </motion.div>
-              {showProfileMenu && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute top-12 right-0 w-64 glass-panel rounded-2xl p-6 border shadow-2xl z-50"
-                  style={{ borderColor: 'rgba(0,219,231,0.2)', background: 'rgba(14,14,15,0.95)', backdropFilter: 'blur(24px)' }}
-                >
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg" style={{ background:'rgba(0,219,231,0.1)', color:'#e1fdff', border: '1px solid rgba(0,219,231,0.2)' }}>C</div>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#e1fdff]">Lead Counselor</h4>
-                      <p className="text-[9px] terminal-text opacity-50">admin@university.edu</p>
-                    </div>
-                  </div>
-                  <div className="h-px w-full bg-white/10 mb-4" />
-                  <div className="space-y-2">
-                    {['Admin Dashboard', 'Campus Settings', 'Neural Ethics Policy'].map(item => (
-                      <button key={item} className="w-full text-left p-2 rounded-lg text-xs hover:bg-white/5 transition-colors opacity-70 hover:opacity-100">
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header title="MindFlow" subtext="SYS_ID: DEPT_INTEL_v1.0" searchPlaceholder="SEARCH_DEPARTMENTS..." />
 
       {/* Main */}
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">

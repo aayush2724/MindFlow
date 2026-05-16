@@ -134,8 +134,19 @@ export function AuthProvider({ children }) {
     return { isNewUser };
   };
 
+  const updateUserProfile = async (updates) => {
+    if (DEMO_MODE) {
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem('mf_demo_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return;
+    }
+    await updateProfile(auth.currentUser, updates);
+    setUser(prev => ({ ...prev, ...updates }));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, role, signInDemo, logout, login, signup, loginWithGoogle }}>
+    <AuthContext.Provider value={{ user, loading, role, signInDemo, logout, login, signup, loginWithGoogle, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

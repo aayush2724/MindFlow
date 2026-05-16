@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 
 const MOCK_POSTS = [
   { id: 1, author: 'Anonymous Node', time: '2m ago', content: 'Feeling completely overwhelmed by finals week. Anyone else having trouble sleeping because of anxiety?', tags: ['Anxiety', 'Academics'], likes: 12, replies: 4 },
@@ -19,30 +20,8 @@ export default function Community() {
 
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      
-      {/* Background Effects */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full" style={{ background:'radial-gradient(circle, rgba(168,85,247,0.02) 0%, transparent 60%)', filter:'blur(80px)' }} />
-      </div>
-
       <Sidebar active="community" />
-
-      {/* Top Nav */}
-      <nav className="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-6 py-4 border-b"
-        style={{ background:'rgba(10,10,12,0.8)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10">
-            <div className="w-2 h-2 rounded-full bg-[#c084fc] animate-pulse" />
-            <span className="text-[10px] font-bold tracking-widest text-[#c084fc] uppercase">342 Nodes Active</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="relative p-2 rounded-full border border-white/10 text-white/50 hover:text-white hover:bg-white/5 transition-colors">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[#D2FF00] rounded-full" />
-          </button>
-        </div>
-      </nav>
+      <Header title="Neural Network" subtext="342 NODES ACTIVE" />
 
       <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-7xl mx-auto space-y-8">

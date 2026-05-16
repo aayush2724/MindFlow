@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 
 const MOCK_RESOURCES = [
   { id: 1, type: 'article', title: 'Cognitive Reframing Techniques', duration: '5 min read', category: 'Therapy', icon: 'psychology' },
@@ -16,35 +17,8 @@ export default function Resources() {
   
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
-      
-      {/* Background Effects */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[20%] left-[10%] w-[500px] h-[500px] rounded-full" style={{ background:'radial-gradient(circle, rgba(0,219,231,0.03) 0%, transparent 70%)', filter:'blur(60px)' }} />
-        <div className="absolute bottom-[10%] right-[10%] w-[600px] h-[600px] rounded-full" style={{ background:'radial-gradient(circle, rgba(210,255,0,0.02) 0%, transparent 70%)', filter:'blur(80px)' }} />
-      </div>
-
       <Sidebar active="resources" />
-
-      {/* Top Nav */}
-      <nav className="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-6 py-4 border-b"
-        style={{ background:'rgba(10,10,12,0.8)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative max-w-md w-full">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-[18px]">search</span>
-            <input 
-              type="text" placeholder="Search resources, exercises, media..." 
-              value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-11 pr-4 text-sm text-[#e1fdff] placeholder-white/20 focus:outline-none focus:border-[#00DBE7]/50 transition-all"
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="relative p-2 rounded-full border border-white/10 text-white/50 hover:text-white hover:bg-white/5 transition-colors">
-            <span className="material-symbols-outlined text-[20px]">bookmarks</span>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[#D2FF00] rounded-full animate-pulse" />
-          </button>
-        </div>
-      </nav>
+      <Header title="Resource Nexus" subtext="SYNC_STATE: OPTIMAL" searchPlaceholder="Search resources, exercises, media..." />
 
       <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-7xl mx-auto space-y-8">

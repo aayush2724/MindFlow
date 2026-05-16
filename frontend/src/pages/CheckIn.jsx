@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, CheckCircle, ArrowRight, RotateCcw } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 import MoodSlider from '../components/MoodSlider';
 import BurnoutGauge from '../components/BurnoutGauge';
 import StressOrb from '../components/StressOrb';
@@ -83,9 +85,12 @@ export default function CheckIn() {
   };
 
   return (
-    <div className="page-wrapper noise" style={{ paddingTop: 88, paddingBottom: 60, minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+    <div className="page-wrapper noise" style={{ minHeight: '100vh' }}>
+      <Sidebar active="checkin" />
+      <Header title="MoodMap" subtext="TELEMETRY_LINK: READY" />
 
-      <div style={{ width: '100%', maxWidth: 560, padding: '0 24px', position: 'relative', zIndex: 1 }}>
+      <div style={{ paddingLeft: '256px', paddingTop: 120, paddingBottom: 60, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 560, padding: '0 24px', position: 'relative', zIndex: 1 }}>
         <AnimatePresence mode="wait">
 
           {/* ── Check-In Form ── */}
@@ -221,6 +226,7 @@ export default function CheckIn() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

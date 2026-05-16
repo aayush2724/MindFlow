@@ -131,14 +131,27 @@ export async function fetchHeatmapData(uid, days = 100) {
 
 // ─── Campus analytics for WellPulse (aggregated) ─────────
 export async function fetchCampusStats() {
-  // In a real app, this would come from a Firestore aggregation or Cloud Function
-  // For now return mock KPIs that feel realistic
-  return {
-    avgBurnout: 42.8,
-    highRiskCount: 128,
-    calmSessions: 3492,
-    engagementIndex: 88.5,
-  };
+  if (DEMO_MODE) {
+    return {
+      avgBurnout: 42.8,
+      highRiskCount: 128,
+      calmSessions: 3492,
+      engagementIndex: 88.5,
+    };
+  }
+
+  try {
+    const { data } = await api.get('/analytics/overview');
+    return {
+      avgBurnout: data.campusAverageBurnout,
+      highRiskCount: data.highRiskCount,
+      calmSessions: 3492, // Still mock for now as this isn't in backend yet
+      engagementIndex: data.checkInRate,
+    };
+  } catch (err) {
+    console.error('Failed to fetch campus stats:', err);
+    return { avgBurnout: 0, highRiskCount: 0, calmSessions: 0, engagementIndex: 0 };
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────

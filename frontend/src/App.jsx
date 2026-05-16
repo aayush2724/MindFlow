@@ -69,14 +69,23 @@ function AppRoutes() {
   return (
     <SmoothScroll>
       {/* Global Background (Video + Precise Glows) */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: -2 }}>
+      <div 
+        className="fixed inset-0 w-full h-full pointer-events-none -z-10"
+        style={{ 
+          background: 'radial-gradient(circle at 50% 50%, #080a0f 0%, #030305 100%)',
+          overflow: 'hidden' 
+        }}
+      >
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.18 }}
+          className="absolute inset-0 w-full h-full object-cover opacity-[0.12] mix-blend-screen transition-opacity duration-1000"
+          onError={(e) => {
+            e.target.style.opacity = 0;
+            console.warn("Background video failed to load, falling back to static gradient.");
+          }}
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"
         />
         

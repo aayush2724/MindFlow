@@ -116,12 +116,12 @@ export default function CheckIn() {
               {/* Live preview */}
               <GlassCard hover={false} style={{ padding: 16, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ flexShrink: 0 }}>
-                  <StressOrb score={calculateBurnoutScore(values).score} size={64} />
+                  <StressOrb score={liveResult.score} size={64} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>Live preview</div>
-                  <div style={{ fontWeight: 600, color: calculateBurnoutScore(values).color }}>
-                    {calculateBurnoutScore(values).level} · {calculateBurnoutScore(values).score}/100
+                  <div className="label" style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>Estimated risk</div>
+                  <div style={{ color: liveResult.color, fontWeight: 700, fontSize: 16 }}>
+                    {liveResult.level}
                   </div>
                 </div>
               </GlassCard>

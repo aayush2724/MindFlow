@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import api from '../lib/api';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
+import { fetchCampusStats } from '../lib/firestore';
 
 const DEPTS = [
   { name:'School of Engineering', nodes:'2,450_NODES', mood:'3.2 / 5.0', risk:'CRITICAL', riskColor:'#ffb4ab', dotColor:'#ffb4ab' },
@@ -21,22 +21,22 @@ export default function WellPulse() {
   const [stats, setStats] = useState({
     campusAverageBurnout: 0,
     highRiskCount: 0,
-    highRiskPercentage: 0,
     checkInRate: 0,
     totalStudents: 0
   });
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState(DEPTS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [statsRes, deptsRes] = await Promise.all([
-          api.get('/analytics/overview'),
-          api.get('/analytics/departments'),
-        ]);
-        setStats(statsRes.data);
-        setDepartments(deptsRes.data);
+        const data = await fetchCampusStats();
+        setStats({
+          campusAverageBurnout: data.avgBurnout,
+          highRiskCount: data.highRiskCount,
+          checkInRate: data.engagementIndex,
+          totalStudents: 14200 // Stable number for HUD
+        });
       } catch (err) {
         console.error('Failed to fetch analytics:', err);
       } finally {

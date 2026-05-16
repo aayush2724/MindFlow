@@ -12,6 +12,8 @@ export default function CalmCal() {
   const { user } = useAuth();
   const [heatmap, setHeatmap] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('weekly'); // 'weekly' | 'monthly'
+  const [selectedDate, setSelectedDate] = useState(16);
 
   useEffect(() => {
     async function load() {
@@ -27,12 +29,44 @@ export default function CalmCal() {
     load();
   }, [user]);
 
-  // Build week display
-  const week = DAYS.map((d, i) => {
-    const entry = heatmap[i] || { count: Math.floor(Math.random() * 4) };
-    const lvl = entry.count >= 3 ? 'high' : entry.count >= 2 ? 'med' : 'low';
-    return { day: d, date: 14 + i, lvl };
-  });
+  // Build view display
+  const generateHeatmapData = (isMonthly) => {
+    const daysToShow = isMonthly ? 31 : 7;
+    const data = [];
+    for (let i = 0; i < daysToShow; i++) {
+      const entry = heatmap[i] || { count: Math.floor(Math.random() * 5) };
+      let lvl = 'low';
+      let color = '#00f2ff';
+      
+      if (entry.count >= 4) {
+        lvl = 'critical';
+        color = '#ff8aae';
+      } else if (entry.count >= 3) {
+        lvl = 'high';
+        color = '#ffb4ab';
+      } else if (entry.count >= 2) {
+        lvl = 'med';
+        color = '#D2FF00';
+      } else if (entry.count >= 1) {
+        lvl = 'low';
+        color = '#00f2ff';
+      } else {
+        lvl = 'empty';
+        color = 'rgba(255,255,255,0.05)';
+      }
+      
+      data.push({ 
+        day: DAYS[i % 7], 
+        date: i + 1, 
+        lvl, 
+        color,
+        val: entry.count 
+      });
+    }
+    return data;
+  };
+
+  const displayData = generateHeatmapData(view === 'monthly');
 
   // Scroll parallax
   useEffect(() => {
@@ -62,8 +96,20 @@ export default function CalmCal() {
               <p className="text-lg font-light max-w-xl" style={{ color:'#b9cacb' }}>Your schedule, harmonized with your mental state. Predictive burnout mapping powered by the Neural Engine.</p>
             </div>
             <div className="flex items-center gap-1 p-1 rounded-full border" style={{ background:'rgba(255,255,255,0.02)', borderColor:'rgba(255,255,255,0.08)' }}>
-              <button className="px-6 py-2 rounded-full font-bold text-xs terminal-text" style={{ background:'rgba(0,242,255,0.15)', color:'#00f2ff' }}>Weekly</button>
-              <button className="px-6 py-2 rounded-full font-bold text-xs terminal-text" style={{ color:'#b9cacb' }}>Monthly</button>
+              <button 
+                onClick={() => setView('weekly')}
+                className={`px-6 py-2 rounded-full font-bold text-xs terminal-text transition-all ${view === 'weekly' ? 'bg-[#00f2ff]/20 text-[#00f2ff]' : 'text-[#b9cacb] hover:text-[#e5e2e3]'}`}
+                style={{ background: view === 'weekly' ? 'rgba(0,242,255,0.15)' : 'transparent' }}
+              >
+                Weekly
+              </button>
+              <button 
+                onClick={() => setView('monthly')}
+                className={`px-6 py-2 rounded-full font-bold text-xs terminal-text transition-all ${view === 'monthly' ? 'bg-[#00f2ff]/20 text-[#00f2ff]' : 'text-[#b9cacb] hover:text-[#e5e2e3]'}`}
+                style={{ background: view === 'monthly' ? 'rgba(0,242,255,0.15)' : 'transparent' }}
+              >
+                Monthly
+              </button>
             </div>
           </header>
 
@@ -76,15 +122,36 @@ export default function CalmCal() {
                 style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
                 <div className="absolute inset-0 opacity-30 pointer-events-none"
                   style={{ background:'linear-gradient(135deg,rgba(0,219,231,0.05) 0%,rgba(210,255,0,0.05) 50%,rgba(255,180,171,0.1) 100%)' }} />
-                <div className="grid grid-cols-7 gap-4 mb-6 relative z-10">
-                  {DAYS.map(d => <div key={d} className="text-center text-xs terminal-text font-semibold pb-2" style={{ color:'#b9cacb' }}>{d}</div>)}
-                  {week.map(({ day, date, lvl }, i) => (
-                    <div key={i} className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative heatmap-${lvl} transition-all duration-500 hover:scale-105 cursor-pointer`}
-                      style={{ backdropFilter:'blur(8px)' }}>
-                      <span className="font-bold text-base" style={{ color: lvl==='high' ? '#ffb4ab' : '#e5e2e3' }}>{date}</span>
-                      {lvl==='high' && <span className="text-[10px] font-bold mt-1 tracking-widest" style={{ color:'#ffb4ab' }}>PEAK</span>}
-                      {lvl==='low' && <span className="material-symbols-outlined text-sm mt-1" style={{ color:'#e1fdff', transform:'scale(0.75)' }}>spa</span>}
-                    </div>
+                <div className={`grid ${view === 'monthly' ? 'grid-cols-7 gap-3' : 'grid-cols-7 gap-4'} mb-6 relative z-10`}>
+                  {DAYS.map(d => <div key={d} className="text-center text-[10px] terminal-text font-bold pb-2 uppercase tracking-widest" style={{ color:'#b9cacb', opacity:0.5 }}>{d}</div>)}
+                  {displayData.map((item, i) => (
+                    <motion.div 
+                      layout
+                      key={i} 
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: i * 0.01 }}
+                      onClick={() => setSelectedDate(item.date)}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all duration-300 hover:scale-110 cursor-pointer group ${selectedDate === item.date ? 'ring-2 ring-white/20' : ''}`}
+                      style={{ 
+                        background: selectedDate === item.date ? `${item.color}30` : (item.lvl === 'empty' ? 'rgba(255,255,255,0.03)' : `${item.color}15`),
+                        border: `1px solid ${selectedDate === item.date ? item.color : (item.lvl === 'empty' ? 'rgba(255,255,255,0.05)' : `${item.color}30`)}`,
+                        boxShadow: item.lvl === 'critical' ? `0 0 15px ${item.color}20` : 'none',
+                        zIndex: selectedDate === item.date ? 20 : 1
+                      }}
+                    >
+                      <span className="font-bold text-sm" style={{ color: item.lvl === 'empty' ? '#4a4a4b' : item.color }}>{item.date}</span>
+                      {view === 'weekly' && item.lvl === 'critical' && <span className="text-[8px] font-bold mt-1 tracking-tighter" style={{ color:item.color }}>PEAK</span>}
+                      {view === 'weekly' && item.lvl === 'low' && <span className="material-symbols-outlined text-[10px] mt-0.5" style={{ color:item.color }}>spa</span>}
+                      
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none">
+                        <div className="bg-[#0e0e0f] border border-white/10 rounded-lg px-3 py-2 text-[10px] terminal-text whitespace-nowrap shadow-2xl">
+                          <span className="font-bold uppercase tracking-widest" style={{ color: item.color }}>{item.lvl}_STATE</span>
+                          <div className="text-[#b9cacb] mt-0.5">Stress Level: {item.val}/5</div>
+                        </div>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
                 {/* Recovery Injection */}
@@ -110,7 +177,7 @@ export default function CalmCal() {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="rounded-3xl p-8 shadow-2xl" style={{ background:'rgba(14,14,15,0.65)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Flow: Oct 16</h3>
+                    <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Flow: Oct {selectedDate}</h3>
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border" style={{ background:'rgba(0,219,231,0.1)', borderColor:'rgba(0,219,231,0.2)' }}>
                       <span className="w-1.5 h-1.5 rounded-full sync-protocol" style={{ background:'#e1fdff' }} />
                       <span className="text-[10px] font-bold terminal-text tracking-widest" style={{ color:'#e1fdff' }}>Sync Protocol</span>

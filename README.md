@@ -3,7 +3,6 @@
 
 MindFlow is a high-fidelity, end-to-end platform designed for educational institutions to monitor, predict, and prevent student burnout. By combining real-time behavioral telemetry with a proprietary AI scoring engine, MindFlow provides students with personal wellness insights and counselors with campus-wide institutional "pulse" analytics.
 
-**GitHub**: [github.com/aayush2724/MindFlow](https://github.com/aayush2724/MindFlow)  
 **Design System**: Midnight Aurora (Glassmorphic HUD v2.1)
 
 ---

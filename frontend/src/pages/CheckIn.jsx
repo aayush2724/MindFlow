@@ -19,6 +19,7 @@ export default function CheckIn() {
   const [values, setValues] = useState({ mood: 6, sleep: 7, workload: 5, stress: 4 });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const liveResult = useMemo(() => calculateBurnoutScore(values), [values]);
 
@@ -26,6 +27,7 @@ export default function CheckIn() {
 
   const handleSubmit = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = calculateBurnoutScore(values);
       
@@ -66,9 +68,12 @@ export default function CheckIn() {
     } catch (err) {
       console.error('Failed to save check-in:', err);
       if (err.response?.status === 400) {
-        alert("You've already submitted a check-in for today!");
+        setError("Sync blocked: You've already submitted a check-in for today.");
+      } else {
+        setError("Neural link unstable: Failed to sync check-in data.");
       }
       
+      // Still show local result even if sync fails
       const res = calculateBurnoutScore(values);
       setResult(res);
       setPhase('result');
@@ -100,6 +105,12 @@ export default function CheckIn() {
                 <h1 className="heading-md" style={{ marginBottom: 8 }}>How are you feeling today?</h1>
                 <p className="body-md">Four questions. 30 seconds. Personalised burnout insight.</p>
               </div>
+
+              {error && (
+                <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,180,171,0.2)', background: 'rgba(255,180,171,0.05)', color: '#ffb4ab', fontSize: 13, fontWeight: 600 }}>
+                  {error}
+                </div>
+              )}
 
               <GlassCard hover={false} style={{ padding: 32, marginBottom: 20 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>

@@ -19,7 +19,7 @@ const getAllAlerts = async (req, res, next) => {
         // Here we provide a masked version of the UID for the counselor dashboard
         studentAlias: `Student-${data.uid.substring(0, 5)}...`, 
         riskLevel: data.riskLevel || 'critical',
-        burnoutScore: data.score || data.burnoutScore,
+        score: data.score,
         message: data.message,
         triggeredAt: data.timestamp ? data.timestamp.toDate() : new Date(),
       };

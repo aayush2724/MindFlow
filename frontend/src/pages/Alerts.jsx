@@ -175,7 +175,7 @@ export default function Alerts() {
                       </div>
                     </div>
                     <div className="terminal-text text-sm" style={{ color:'#b9cacb' }}>
-                      BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.burnoutScore}</span>
+                      BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.score}</span>
                     </div>
                   </div>
                 </motion.div>

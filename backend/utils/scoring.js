@@ -104,6 +104,7 @@ const calculateBurnoutScore = async (uid) => {
         type: 'burnout_critical',
         message: 'Student has reached a critical burnout risk level. Intervention recommended.',
         score: finalScore,
+        acknowledged: false,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
         status: 'pending'
       });

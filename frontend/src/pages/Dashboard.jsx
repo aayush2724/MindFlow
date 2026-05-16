@@ -21,7 +21,7 @@ export default function Dashboard() {
         
         if (scoreRes.data.hasData) {
           setBurnout({
-            score: scoreRes.data.burnoutScore,
+            score: scoreRes.data.score,
             level: scoreRes.data.riskLevel,
             advice: [] // Optional advice if backend provides it
           });
@@ -31,7 +31,7 @@ export default function Dashboard() {
         }
 
         setHistory(historyRes.data.map(h => ({
-          score: h.burnoutScore,
+          score: h.score,
           date: h.calculatedAt
         })));
       } catch (err) {

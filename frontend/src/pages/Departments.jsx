@@ -33,7 +33,7 @@ export default function Departments() {
   const getBarColor = (val) => val > 70 ? '#ffb4ab' : val > 45 ? '#D2FF00' : '#00dbe7';
 
   return (
-    <div className="crt-overlay" style={{ background:'#000', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
+    <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       {/* Black Hole BG */}
       <div style={{ position:'fixed', inset:0, zIndex:-1, background:'#020202', overflow:'hidden' }}>
         <div className="accretion-disk-layer" />

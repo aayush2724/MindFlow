@@ -66,10 +66,31 @@ function AppRoutes() {
   const { user, role } = useAuth();
   // Only Auth and Onboarding use the old global nav/bg system
   const showNav = ['/onboarding', '/checkin', '/auth'].includes(location.pathname);
-  const showGlobalBackground = ['/onboarding', '/checkin', '/auth'].includes(location.pathname);
+  const showGlobalBackground = location.pathname !== '/';
 
   return (
     <SmoothScroll>
+      {/* Cinematic Video Background */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: -2 }}>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover pointer-events-none"
+          style={{ opacity: 0.15 }}
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"
+        />
+        {/* Dark overlay to keep text readable */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse at 50% 50%, rgba(0,219,231,0.12) 0%, rgba(3,3,5,0.75) 70%)',
+          }}
+        />
+      </div>
+
+      <div className="global-bh-glow" />
       {showGlobalBackground && <CinematicBackground />}
       <CustomCursor />
       {showNav && <Nav />}

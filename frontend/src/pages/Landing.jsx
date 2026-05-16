@@ -19,8 +19,8 @@ export default function Landing() {
         if (el.getBoundingClientRect().top < window.innerHeight * 0.85) el.classList.add('active');
       });
       if (nav) {
-        if (y > 100) nav.classList.add('bg-[#020202]/80','backdrop-blur-xl','border-b','border-white/5');
-        else nav.classList.remove('bg-[#020202]/80','backdrop-blur-xl','border-b','border-white/5');
+        if (y > 20) nav.classList.add('bg-[#030305]/80','border-white/10');
+        else nav.classList.remove('bg-[#030305]/80','border-white/10');
       }
     };
     window.addEventListener('scroll', onScroll);
@@ -45,24 +45,15 @@ export default function Landing() {
   }, []);
 
   return (
-    <div style={{ background: '#020202', color: '#e5e2e3', cursor: 'none', overflowX: 'hidden', fontFamily: 'Space Grotesk, sans-serif' }}>
+    <div style={{ background: 'transparent', color: '#e5e2e3', cursor: 'none', overflowX: 'hidden', fontFamily: 'Space Grotesk, sans-serif' }}>
       {/* Custom cursor */}
       <div className="custom-cursor" />
       <div className="custom-cursor-follower" />
 
-      {/* Black Hole Background */}
-      <div style={{ position:'fixed', inset:0, zIndex:-2, background:'#020202', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 50% 40%, rgba(0,219,231,0.05) 0%, transparent 60%)' }} />
-        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%) rotateX(75deg)', width:1200, height:1200 }}>
-          <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'conic-gradient(from 0deg,rgba(0,219,231,0.1) 0%,rgba(210,255,0,0.4) 25%,rgba(0,219,231,0.8) 50%,rgba(210,255,0,0.4) 75%,rgba(0,219,231,0.1) 100%)', filter:'blur(40px)', opacity:0.8, animation:'disk-spin 40s linear infinite' }} />
-          <div style={{ position:'absolute', inset:'15%', borderRadius:'50%', background:'conic-gradient(from 180deg,rgba(210,255,0,0.2) 0%,rgba(0,219,231,0.6) 25%,rgba(210,255,0,0.8) 50%,rgba(0,219,231,0.6) 75%,rgba(210,255,0,0.2) 100%)', filter:'blur(20px)', animation:'disk-spin 30s linear infinite reverse' }} />
-        </div>
-        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:400, height:400, borderRadius:'50%', boxShadow:'0 0 80px 20px rgba(0,219,231,0.3), 0 0 150px 40px rgba(210,255,0,0.1)', zIndex:1 }} />
-        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:380, height:380, background:'#000', borderRadius:'50%', zIndex:2 }} />
-      </div>
+
 
       {/* Nav */}
-      <nav id="main-nav" className="fixed top-0 w-full z-50 flex justify-between items-center px-10 py-6 transition-all duration-500">
+      <nav id="main-nav" className="fixed top-0 w-full z-50 flex justify-between items-center px-10 py-6 transition-all duration-500 backdrop-blur-xl bg-[#030305]/20 border-b border-white/5">
         <span style={{ fontFamily:'Space Grotesk', fontWeight:700, fontSize:28, letterSpacing:'-0.04em', color:'#e1fdff' }}>MINDFLOW</span>
         <div className="hidden md:flex items-center gap-12">
           {['DASHBOARD','RESOURCES','COMMUNITY'].map((l,i) => {
@@ -127,7 +118,7 @@ export default function Landing() {
 
       {/* Bento Grid */}
       <section className="sticky top-0 min-h-screen py-20 px-10 border-t z-20 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
-        style={{ background:'rgba(2,2,2,0.9)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
+        style={{ background:'rgba(3,3,5,0.4)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
             {/* MoodMap */}
@@ -205,7 +196,7 @@ export default function Landing() {
 
       {/* Intelligence Core */}
       <section className="sticky top-0 min-h-screen py-20 px-10 border-t z-30 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
-        style={{ background:'rgba(2,2,2,0.95)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
+        style={{ background:'rgba(3,3,5,0.6)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide space-y-16">
           <div className="text-center reveal-on-scroll">
             <h2 className="text-3xl font-bold tracking-tight" style={{ color:'#e1fdff', fontFamily:'Space Grotesk' }}>INTELLIGENCE CORE</h2>
@@ -246,7 +237,7 @@ export default function Landing() {
 
       {/* CTA */}
       <section className="sticky top-0 min-h-screen py-40 px-10 text-center border-t z-40 flex items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
-        style={{ background:'#020202', borderColor:'rgba(255,255,255,0.08)' }}>
+        style={{ background:'transparent', borderColor:'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide relative z-10 space-y-16 reveal-on-scroll">
           <h2 className="font-bold tracking-tighter" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(40px,6vw,80px)', color:'#e1fdff' }}>
             READY FOR<br/>FLOW STATE?
@@ -265,7 +256,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="sticky top-0 w-full py-20 px-10 border-t z-50 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
-        style={{ background:'#020202', borderColor:'rgba(255,255,255,0.08)' }}>
+        style={{ background:'rgba(3,3,5,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide grid grid-cols-1 md:grid-cols-3 gap-16 items-start">
           <div className="flex flex-col gap-6">
             <span className="font-bold tracking-tighter" style={{ fontFamily:'Space Grotesk', fontSize:28, color:'#e1fdff' }}>MINDFLOW</span>

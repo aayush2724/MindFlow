@@ -36,7 +36,7 @@ export default function CalmCal() {
   }, []);
 
   return (
-    <div className="obsidian-grid" style={{ background:'#0e0e0f', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
+    <div className="obsidian-grid" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       {/* Space background */}
       <div aria-hidden="true" style={{ position:'fixed', inset:0, zIndex:-2, background:'radial-gradient(circle at 50% 50%, #0c141d 0%, #080808 100%)', overflow:'hidden' }}>
         <div className="nebula nebula-cyan" />

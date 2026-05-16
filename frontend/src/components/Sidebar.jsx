@@ -24,7 +24,7 @@ export default function Sidebar({ active }) {
   return (
     <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 sidebar-integrated z-[60] pt-24 pb-8">
       {/* Brand */}
-      <div className="px-6 mb-8 flex items-center gap-3">
+      <Link to="/" className="px-6 mb-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
         <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(210,255,0,0.4)]"
              style={{ background: '#D2FF00' }}>
           <span className="material-symbols-outlined text-black" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
@@ -37,7 +37,7 @@ export default function Sidebar({ active }) {
             {role === 'counselor' ? 'ADMIN CONSOLE' : 'ZEN MODE ACTIVATED'}
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Nav links */}
       <nav className="flex-1 space-y-1">

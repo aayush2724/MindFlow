@@ -47,10 +47,10 @@ export default function Nav() {
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
           padding: '0 24px',
-          background: scrolled ? 'rgba(8,11,20,0.92)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-          transition: 'all 0.3s ease',
+          background: scrolled ? 'rgba(3,3,5,0.85)' : 'rgba(3,3,5,0.4)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          transition: 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>

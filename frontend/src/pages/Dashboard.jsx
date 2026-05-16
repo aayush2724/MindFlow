@@ -39,7 +39,7 @@ export default function Dashboard() {
     : [22,35,12,88,80,55,40];
 
   return (
-    <div style={{ background:'#050506', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
+    <div style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       {/* Space background */}
       <div className="space-bg">
         <div className="starfield-db" />

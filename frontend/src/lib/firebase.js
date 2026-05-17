@@ -15,8 +15,12 @@ const firebaseConfig = {
 
 const isFirebaseConfigured = !!(
   firebaseConfig.apiKey &&
-  firebaseConfig.apiKey !== 'undefined' &&
-  firebaseConfig.apiKey !== ''
+  typeof firebaseConfig.apiKey === 'string' &&
+  firebaseConfig.apiKey.startsWith('AIzaSy') &&
+  firebaseConfig.projectId &&
+  typeof firebaseConfig.projectId === 'string' &&
+  !firebaseConfig.projectId.includes('placeholder') &&
+  !firebaseConfig.projectId.includes('your-project-id')
 );
 
 let app = null;

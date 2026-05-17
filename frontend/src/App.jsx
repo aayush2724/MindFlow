@@ -146,8 +146,6 @@ function AppRoutes() {
       </div>
 
       <CustomCursor />
-      {/* Global scan-line — gives the "live monitoring" feel */}
-      <div className="scan-line" />
       {/* Cinematic vignette — dark edges, bright centre like a film lens */}
       <div className="vignette" />
       {showNav && <Nav />}

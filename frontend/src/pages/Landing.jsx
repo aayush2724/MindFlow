@@ -1,8 +1,20 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Landing() {
+  const navigate = useNavigate();
+  const [ctaEmail, setCtaEmail] = useState('');
+  const [ctaSubmitted, setCtaSubmitted] = useState(false);
+  const [activeCore, setActiveCore] = useState(null);
+
+  const handleCtaSubmit = (e) => {
+    e.preventDefault();
+    if (ctaEmail.trim()) {
+      navigate('/auth');
+    }
+  };
+
   useEffect(() => {
     // Custom cursor
     const onMove = (e) => {
@@ -219,7 +231,7 @@ export default function Landing() {
                         style={{ background:'rgba(42,42,43,0.8)', color:'#b9cacb' }}>{t}</span>
                     ))}
                   </div>
-                  <button className="absolute bottom-4 right-4 w-10 h-10 rounded flex items-center justify-center transition-colors duration-300 z-10"
+                  <button onClick={() => navigate('/auth')} className="absolute bottom-4 right-4 w-10 h-10 rounded flex items-center justify-center transition-colors duration-300 z-10 cursor-pointer"
                     style={{ background:'#e5e2e3', color:'#131314' }}
                     onMouseEnter={e => { e.currentTarget.style.background='#D2FF00'; }}
                     onMouseLeave={e => { e.currentTarget.style.background='#e5e2e3'; }}>
@@ -243,15 +255,15 @@ export default function Landing() {
           <h2 className="font-bold tracking-tighter" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(40px,6vw,80px)', color:'#e1fdff' }}>
             READY FOR<br/>FLOW STATE?
           </h2>
-          <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-            <input className="rounded-full px-10 py-6 w-full outline-none terminal-text text-xs tracking-widest"
-              style={{ background:'rgba(28,27,28,0.5)', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e2e3' }}
-              placeholder="ENTER INSTITUTION EMAIL" type="email" />
-            <button className="px-12 py-6 rounded-full font-bold tracking-[0.2em] text-xs whitespace-nowrap transition-all hover:shadow-[0_0_40px_rgba(210,255,0,0.4)]"
+          <form onSubmit={handleCtaSubmit} className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+            <input className="rounded-full px-10 py-6 w-full outline-none terminal-text text-xs tracking-widest bg-white/[0.03]"
+              style={{ border:'1px solid rgba(255,255,255,0.08)', color:'#e5e2e3' }}
+              placeholder="ENTER INSTITUTION EMAIL" type="email" value={ctaEmail} onChange={e => setCtaEmail(e.target.value)} required />
+            <button type="submit" className="px-12 py-6 rounded-full font-bold tracking-[0.2em] text-xs whitespace-nowrap transition-all hover:shadow-[0_0_40px_rgba(210,255,0,0.4)] cursor-pointer"
               style={{ background:'#D2FF00', color:'#020202' }}>
               GET EARLY ACCESS
             </button>
-          </div>
+          </form>
         </div>
       </section>
 
@@ -285,6 +297,8 @@ export default function Landing() {
           <span className="material-symbols-outlined font-bold">bolt</span>
         </button>
       </Link>
+
+
 
       <style>{`
         @keyframes heroReveal { to { opacity:1; transform:translateY(0); } }

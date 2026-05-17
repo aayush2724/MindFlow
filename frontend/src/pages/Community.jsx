@@ -42,15 +42,19 @@ const MOCK_POSTS = [
     repliesList: []
   },
 ];
-
 const MOCK_GROUPS = [
   { id: 1, name: 'First-Gen Students', active: 124, status: 'Active' },
   { id: 2, name: 'Anxiety Support', active: 89, status: 'Active' },
   { id: 3, name: 'CS Majors Venting', active: 210, status: 'Very Active' },
 ];
 
+const COMMON_TAGS = ['#Anxiety', '#Academics', '#Sleep', '#Win', '#Focus', '#Stress'];
+const QUICK_EMOJIS = ['😊', '💙', '🌱', '✨', '🫂', '💪', '🧠', '😴'];
+
 export default function Community() {
   const [newPost, setNewPost] = useState('');
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [posts, setPosts] = useState(() => {
     const saved = localStorage.getItem('mf_community_posts');
     return saved ? JSON.parse(saved) : MOCK_POSTS;
@@ -64,6 +68,8 @@ export default function Community() {
   const [openChatGroup, setOpenChatGroup] = useState(null);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' | 'info' }
+
+
 
   const handleDeletePost = (postId) => {
     setPosts(prev => prev.filter(p => p.id !== postId));
@@ -186,16 +192,44 @@ export default function Community() {
                     placeholder="Share your current mental state or ask for support..."
                     className="w-full bg-black/20 border border-white/5 rounded-xl p-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-purple-400/50 resize-none min-h-[100px] transition-colors"
                   />
+                  {showTagPicker && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {COMMON_TAGS.map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setNewPost(prev => prev + (prev.endsWith(' ') || prev === '' ? '' : ' ') + tag + ' ');
+                            setShowTagPicker(false);
+                          }}
+                          className="px-3 py-1 rounded-full text-[10px] font-bold border border-[#c084fc]/30 text-[#c084fc] hover:bg-[#c084fc]/10 transition-colors cursor-pointer"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex gap-2">
-                      <button className="p-2 rounded-lg text-white/30 hover:text-white/80 hover:bg-white/5 transition-colors">
+                      <button
+                        title="Add emoji"
+                        onClick={() => {
+                          const emoji = QUICK_EMOJIS[Math.floor(Math.random() * QUICK_EMOJIS.length)];
+                          setNewPost(prev => prev + emoji);
+                        }}
+                        className="p-2 rounded-lg text-white/30 hover:text-white/80 hover:bg-white/5 transition-colors cursor-pointer"
+                      >
                         <span className="material-symbols-outlined text-[20px]">mood</span>
                       </button>
-                      <button className="p-2 rounded-lg text-white/30 hover:text-white/80 hover:bg-white/5 transition-colors">
+                      <button
+                        title="Add tag"
+                        onClick={() => setShowTagPicker(p => !p)}
+                        className={`p-2 rounded-lg transition-colors cursor-pointer ${showTagPicker ? 'text-[#c084fc] bg-[#c084fc]/10' : 'text-white/30 hover:text-white/80 hover:bg-white/5'}`}
+                      >
                         <span className="material-symbols-outlined text-[20px]">sell</span>
                       </button>
                     </div>
-                    <button onClick={handleTransmit} className="px-6 py-2 rounded-lg text-xs font-bold tracking-widest text-black hover:scale-105 transition-transform" style={{ background: '#c084fc', boxShadow:'0 0 20px rgba(192,132,252,0.2)' }}>
+                    <button onClick={handleTransmit} className="px-6 py-2 rounded-lg text-xs font-bold tracking-widest text-black hover:scale-105 transition-transform cursor-pointer" style={{ background: '#c084fc', boxShadow:'0 0 20px rgba(192,132,252,0.2)' }}>
                       TRANSMIT
                     </button>
                   </div>
@@ -281,7 +315,14 @@ export default function Community() {
                         <span className="material-symbols-outlined text-[18px] group-hover/btn:scale-110 transition-transform">chat_bubble</span>
                         <span className="text-xs font-bold">{post.replies}</span>
                       </button>
-                      <button className="flex items-center gap-2 text-white/30 hover:text-white transition-colors ml-auto">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(post.content).catch(() => {});
+                          setToast({ message: 'Transmission copied to clipboard.', type: 'info' });
+                          setTimeout(() => setToast(null), 3000);
+                        }}
+                        className="flex items-center gap-2 text-white/30 hover:text-white transition-colors ml-auto cursor-pointer"
+                      >
                         <span className="material-symbols-outlined text-[18px]">share</span>
                       </button>
                     </div>

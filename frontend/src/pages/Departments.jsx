@@ -172,7 +172,7 @@ export default function Departments() {
                       ))}
                     </div>
 
-                    <button className="mt-auto w-full py-3 border rounded-xl text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-all hover:text-[#D2FF00]"
+                    <button onClick={() => { setSelectedDept(dept.department); document.getElementById('dept-trend-section')?.scrollIntoView({ behavior: 'smooth' }); }} className="mt-auto w-full py-3 border rounded-xl text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-all hover:text-[#D2FF00] cursor-pointer"
                       style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e1fdff' }}>DEEP_DIVE</button>
                   </motion.div>
                 );
@@ -181,7 +181,7 @@ export default function Departments() {
           )}
 
           {/* Section 3: Trend Analysis */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+          <motion.div id="dept-trend-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
             style={{ zIndex:20, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <section className="rounded-3xl p-8 relative overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>

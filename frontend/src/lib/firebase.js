@@ -6,6 +6,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
+import { getStorage } from 'firebase/storage';
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -20,7 +22,7 @@ export const DEMO_MODE = !firebaseConfig.apiKey ||
                          firebaseConfig.apiKey === 'your_api_key' || 
                          firebaseConfig.apiKey.startsWith('demo-');
 
-let app, auth, db, googleProvider;
+let app, auth, db, googleProvider, storage;
 
 if (!DEMO_MODE) {
   try {
@@ -28,11 +30,12 @@ if (!DEMO_MODE) {
     auth = getAuth(app);
     db = getFirestore(app);
     googleProvider = new GoogleAuthProvider();
+    storage = getStorage(app);
   } catch (err) {
     console.error('Firebase initialization failed:', err.message);
     // If it fails, we effectively fall back to demo mode logic in components
   }
 }
 
-export { auth, db, googleProvider };
+export { auth, db, googleProvider, storage };
 export default app;

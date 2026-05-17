@@ -17,26 +17,48 @@ export default function Departments() {
   const [selectedDept, setSelectedDept] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [deptsRes, statsRes] = await Promise.all([
-          api.get('/analytics/departments'),
-          api.get('/analytics/overview'),
-        ]);
-        setDepartments(deptsRes.data);
-        setStats(statsRes.data);
-        if (deptsRes.data.length > 0) {
-          setSelectedDept(deptsRes.data[0].department);
-        }
-      } catch (err) {
-        console.error('Failed to fetch department analytics:', err);
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [deptsRes, statsRes] = await Promise.all([
+        api.get('/analytics/departments'),
+        api.get('/analytics/overview'),
+      ]);
+      setDepartments(deptsRes.data);
+      setStats(statsRes.data);
+      if (deptsRes.data.length > 0) {
+        setSelectedDept(deptsRes.data[0].department);
       }
+    } catch (err) {
+      console.error('Failed to fetch department analytics:', err);
+    } finally {
+      setLoading(false);
     }
-    load();
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
+
+  const handleExportData = () => {
+    if (departments.length === 0) return;
+    const headers = ["Department", "Student Nodes", "Average Burnout Score (0-100)", "High Risk Alerts Count"];
+    const rows = departments.map(d => [
+      `"${d.department.replace(/"/g, '""')}"`,
+      d.studentCount ?? 0,
+      `${d.avgBurnoutScore ?? 0}%`,
+      d.highRiskCount ?? 0
+    ]);
+    const csvContent = [headers.join(",")].concat(rows.map(r => r.join(","))).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `mindflow_departmental_report_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getBarColor = (val) => val > 70 ? '#ffb4ab' : val > 45 ? '#D2FF00' : '#00dbe7';
   
@@ -66,11 +88,16 @@ export default function Departments() {
                 </p>
               </div>
               <div className="flex gap-3">
-                <button className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80"
+                <button 
+                  onClick={handleExportData}
+                  disabled={departments.length === 0}
+                  className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   style={{ background:'rgba(0,219,231,0.1)', borderColor:'rgba(0,219,231,0.3)', color:'#e1fdff' }}>
                   <span className="material-symbols-outlined text-[20px]">download</span> EXPORT_DATA
                 </button>
-                <button className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80"
+                <button 
+                  onClick={fetchData}
+                  className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80 cursor-pointer"
                   style={{ background:'rgba(32,31,32,0.4)', borderColor:'rgba(255,255,255,0.08)', color:'#e5e2e3' }}>
                   <span className="material-symbols-outlined text-[20px]">refresh</span> REFRESH
                 </button>
@@ -92,57 +119,65 @@ export default function Departments() {
           </motion.div>
 
           {/* Section 2: Department Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {departments.map((dept, i) => {
-              const riskKey = dept.avgBurnoutScore > 75 ? 'critical' : dept.avgBurnoutScore > 60 ? 'high' : dept.avgBurnoutScore > 40 ? 'moderate' : 'low';
-              const risk = RISK_MAP[riskKey];
-              return (
-                <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }} className="rounded-3xl p-8 flex flex-col gap-6 border transition-all hover:border-[rgba(0,219,231,0.4)]"
-                  style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-xl mb-1" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>{dept.department}</h3>
-                      <span className="text-[10px] terminal-text" style={{ color:'#b9cacb' }}>{dept.studentCount?.toLocaleString()}_NODES</span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text"
-                      style={{ background:`${risk.color}1A`, color:risk.color, borderColor:`${risk.color}33` }}>{risk.label}</span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
-                        <span>AVG_BURNOUT</span>
-                        <span style={{ color: getBarColor(dept.avgBurnoutScore) }}>{dept.avgBurnoutScore}%</span>
+          {departments.length === 0 && !loading ? (
+            <div className="rounded-3xl p-16 border text-center my-12" style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(255,255,255,0.08)' }}>
+              <span className="material-symbols-outlined text-4xl mb-4 text-[#ffb4ab]">domain_disabled</span>
+              <h3 className="font-semibold text-lg text-white mb-2" style={{ fontFamily: 'Space Grotesk' }}>No Departments Found</h3>
+              <p className="text-sm text-[#b9cacb] max-w-md mx-auto">No departmental analytic telemetry has been logged yet or matches the current filter settings.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {departments.map((dept, i) => {
+                const riskKey = dept.avgBurnoutScore > 75 ? 'critical' : dept.avgBurnoutScore > 60 ? 'high' : dept.avgBurnoutScore > 40 ? 'moderate' : 'low';
+                const risk = RISK_MAP[riskKey];
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }} className="rounded-3xl p-8 flex flex-col gap-6 border transition-all hover:border-[rgba(0,219,231,0.4)]"
+                    style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-xl mb-1" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>{dept.department}</h3>
+                        <span className="text-[10px] terminal-text" style={{ color:'#b9cacb' }}>{dept.studentCount?.toLocaleString()}_NODES</span>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
-                        <div className="h-full chart-bar rounded-full" style={{ width:`${dept.avgBurnoutScore}%`, background: getBarColor(dept.avgBurnoutScore) }} />
-                      </div>
+                      <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text"
+                        style={{ background:`${risk.color}1A`, color:risk.color, borderColor:`${risk.color}33` }}>{risk.label}</span>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
-                        <span>CHECK_IN_RATE</span>
-                        <span style={{ color:'#00dbe7' }}>{Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%</span>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
+                          <span>AVG_BURNOUT</span>
+                          <span style={{ color: getBarColor(dept.avgBurnoutScore) }}>{dept.avgBurnoutScore}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
+                          <div className="h-full chart-bar rounded-full" style={{ width:`${dept.avgBurnoutScore}%`, background: getBarColor(dept.avgBurnoutScore) }} />
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
-                        <div className="h-full chart-bar rounded-full" style={{ width:`${Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%`, background:'#00dbe7' }} />
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
+                          <span>CHECK_IN_RATE</span>
+                          <span style={{ color:'#00dbe7' }}>{Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
+                          <div className="h-full chart-bar rounded-full" style={{ width:`${Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%`, background:'#00dbe7' }} />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {['SYSTEM_SYNC','ACTIVE_MONITORING'].map(s => (
-                      <span key={s} className="px-2 py-0.5 rounded border text-[8px] terminal-text font-bold"
-                        style={{ color:'#b9cacb', borderColor:'rgba(255,255,255,0.1)' }}>[ {s} ]</span>
-                    ))}
-                  </div>
+                    <div className="flex flex-wrap gap-2">
+                      {['SYSTEM_SYNC','ACTIVE_MONITORING'].map(s => (
+                        <span key={s} className="px-2 py-0.5 rounded border text-[8px] terminal-text font-bold"
+                          style={{ color:'#b9cacb', borderColor:'rgba(255,255,255,0.1)' }}>[ {s} ]</span>
+                      ))}
+                    </div>
 
-                  <button className="mt-auto w-full py-3 border rounded-xl text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-all hover:text-[#D2FF00]"
-                    style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e1fdff' }}>DEEP_DIVE</button>
-                </motion.div>
-              );
-            })}
-          </div>
+                    <button className="mt-auto w-full py-3 border rounded-xl text-[10px] terminal-text font-bold uppercase underline underline-offset-4 transition-all hover:text-[#D2FF00]"
+                      style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e1fdff' }}>DEEP_DIVE</button>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Section 3: Trend Analysis */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"

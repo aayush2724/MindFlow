@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -51,11 +51,25 @@ const MOCK_GROUPS = [
 
 export default function Community() {
   const [newPost, setNewPost] = useState('');
-  const [posts, setPosts] = useState(MOCK_POSTS);
-  const [likedPosts, setLikedPosts] = useState(new Set());
+  const [posts, setPosts] = useState(() => {
+    const saved = localStorage.getItem('mf_community_posts');
+    return saved ? JSON.parse(saved) : MOCK_POSTS;
+  });
+  const [likedPosts, setLikedPosts] = useState(() => {
+    const saved = localStorage.getItem('mf_community_liked');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [activePostForReplies, setActivePostForReplies] = useState(null);
   const [openChatGroup, setOpenChatGroup] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('mf_community_posts', JSON.stringify(posts));
+  }, [posts]);
+
+  useEffect(() => {
+    localStorage.setItem('mf_community_liked', JSON.stringify(Array.from(likedPosts)));
+  }, [likedPosts]);
 
   const handleTransmit = () => {
     if (!newPost.trim()) return;
@@ -97,19 +111,20 @@ export default function Community() {
   const toggleLike = (id) => {
     setLikedPosts(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
+      const wasLiked = newSet.has(id);
+      if (wasLiked) {
         newSet.delete(id);
       } else {
         newSet.add(id);
       }
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === id) {
+          return { ...post, likes: post.likes + (wasLiked ? -1 : 1) };
+        }
+        return post;
+      }));
       return newSet;
     });
-    setPosts(prevPosts => prevPosts.map(post => {
-      if (post.id === id) {
-        return { ...post, likes: likedPosts.has(id) ? post.likes - 1 : post.likes + 1 };
-      }
-      return post;
-    }));
   };
 
   const displayedPosts = selectedCluster 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, HelpCircle, PhoneCall, AlertTriangle, ShieldAlert, CheckCircle, Send } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -10,6 +10,10 @@ export default function Support() {
   const [ticket, setTicket] = useState({ subject: '', category: 'General Help', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSubmitted(false);
+  }, []);
 
   const faqs = [
     {

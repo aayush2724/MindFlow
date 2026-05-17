@@ -1,14 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function Header({ title, subtext, searchPlaceholder = "SEARCH_NEURAL_NET..." }) {
+export default function Header({ title, subtext, searchPlaceholder = "SEARCH_NEURAL_NET...", onSearch }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchAlerts() {
+      try {
+        const endpoint = user?.role === 'counselor' ? '/alerts' : '/alerts/me';
+        const res = await api.get(endpoint);
+        if (active) {
+          const list = res.data || [];
+          setAlerts(list.filter(a => !a.acknowledged));
+        }
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      } finally {
+        if (active) setLoadingNotifs(false);
+      }
+    }
+    if (user) {
+      fetchAlerts();
+    }
+    return () => { active = false; };
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -39,13 +64,16 @@ export default function Header({ title, subtext, searchPlaceholder = "SEARCH_NEU
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="hidden md:flex items-center px-4 py-2 rounded-lg border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}>
-          <span className="material-symbols-outlined text-sm mr-2" style={{ color: '#b9cacb' }}>search</span>
-          <input className="bg-transparent border-none outline-none text-xs w-48 placeholder:opacity-40" 
-            style={{ color: '#e5e2e3' }} 
-            placeholder={searchPlaceholder} 
-          />
-        </div>
+        {onSearch && (
+          <div className="hidden md:flex items-center px-4 py-2 rounded-lg border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}>
+            <span className="material-symbols-outlined text-sm mr-2" style={{ color: '#b9cacb' }}>search</span>
+            <input className="bg-transparent border-none outline-none text-xs w-48 placeholder:opacity-40" 
+              style={{ color: '#e5e2e3' }} 
+              placeholder={searchPlaceholder} 
+              onChange={(e) => onSearch(e.target.value)}
+            />
+          </div>
+        )}
         
         {/* Notifications */}
         <div className="relative">
@@ -56,7 +84,9 @@ export default function Header({ title, subtext, searchPlaceholder = "SEARCH_NEU
             className="relative p-2"
           >
             <span className="material-symbols-outlined transition-colors hover:text-[#e1fdff]" style={{ color: '#b9cacb' }}>notifications</span>
-            <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-black" />
+            {alerts.length > 0 && (
+              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-black animate-pulse" />
+            )}
           </motion.button>
           
           <AnimatePresence>
@@ -69,11 +99,24 @@ export default function Header({ title, subtext, searchPlaceholder = "SEARCH_NEU
                 style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(14,14,15,0.95)', backdropFilter: 'blur(24px)' }}
               >
                 <h4 className="text-xs font-bold tracking-[0.2em] mb-4 text-[#e1fdff]">ACTIVE_NOTIFICATIONS</h4>
-                <div className="space-y-4">
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/5">
-                    <p className="text-[10px] terminal-text text-[#D2FF00] mb-1">SYSTEM_ALERT</p>
-                    <p className="text-xs opacity-70">Neural trajectory synchronized successfully.</p>
-                  </div>
+                <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
+                  {loadingNotifs ? (
+                    <p className="text-[10px] terminal-text opacity-50">SYNCING...</p>
+                  ) : alerts.length === 0 ? (
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 text-center">
+                      <p className="text-[10px] terminal-text text-[#00f2ff] mb-1">ALL_CLEAR</p>
+                      <p className="text-xs opacity-50">No new alerts logged.</p>
+                    </div>
+                  ) : (
+                    alerts.map(a => (
+                      <div key={a.id} className="p-3 rounded-lg bg-white/5 border border-white/5">
+                        <p className="text-[10px] terminal-text text-[#ffb4ab] mb-1">
+                          {a.riskLevel === 'critical' ? 'CRITICAL_ALERT' : 'HIGH_RISK_ALERT'}
+                        </p>
+                        <p className="text-xs opacity-75">{a.message || `Stress weight calculated at ${a.score}`}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </motion.div>
             )}

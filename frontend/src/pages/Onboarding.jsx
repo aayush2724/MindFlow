@@ -47,13 +47,25 @@ export default function Onboarding() {
   const { user, updateUserProfile } = useAuth();
   const [step, setStep] = useState(0);
   const [data, setData] = useState({});
+  const [error, setError] = useState('');
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
 
-  const handleChange = (id, value) => setData(prev => ({ ...prev, [id]: value }));
+  const handleChange = (id, value) => {
+    setError('');
+    setData(prev => ({ ...prev, [id]: value }));
+  };
 
   const handleNext = async () => {
+    setError('');
+    const requiredFields = current.fields.map(f => f.id);
+    const missing = requiredFields.filter(id => !data[id]);
+    if (missing.length > 0) {
+      setError('Please complete all fields before continuing.');
+      return;
+    }
+
     if (isLast) {
       try {
         // Map to backend schema
@@ -107,6 +119,13 @@ export default function Onboarding() {
               <h2 className="heading-md" style={{ marginBottom: 8 }}>{current.title}</h2>
               <p className="body-md">{current.subtitle}</p>
             </div>
+
+            {error && (
+              <div className="mb-6 p-4 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-mono flex items-center gap-2 animate-shake">
+                <span className="material-symbols-outlined text-sm">warning</span>
+                <span>{error}</span>
+              </div>
+            )}
 
             <GlassCard hover={false} style={{ padding: 28, marginBottom: 24 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { fetchCampusStats, fetchDepartmentStats, fetchSyslogAlerts } from '../lib/firestore';
 import api from '../lib/api';
 import { 
-  Sparkles, Download, Filter, Eye, AlertCircle, X, 
+  Sparkles, Download, Filter, RefreshCw, Eye, AlertCircle, X, 
   Send, Users, Award, ShieldCheck, Heart, Volume2 
 } from 'lucide-react';
 
@@ -99,54 +99,54 @@ export default function WellPulse() {
     }, 4000);
   };
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [statsData, deptData, alertsData] = await Promise.all([
-          fetchCampusStats(),
-          fetchDepartmentStats(),
-          fetchSyslogAlerts()
-        ]);
-        
-        setStats({
-          campusAverageBurnout: statsData.avgBurnout || 58.4,
-          highRiskCount: statsData.highRiskCount || 14,
-          checkInRate: statsData.engagementIndex || 82.5,
-          totalStudents: statsData.totalStudents || 14200
-        });
+  const loadData = async () => {
+    try {
+      const [statsData, deptData, alertsData] = await Promise.all([
+        fetchCampusStats(),
+        fetchDepartmentStats(),
+        fetchSyslogAlerts()
+      ]);
+      
+      setStats({
+        campusAverageBurnout: statsData.avgBurnout || 58.4,
+        highRiskCount: statsData.highRiskCount || 14,
+        checkInRate: statsData.engagementIndex || 82.5,
+        totalStudents: statsData.totalStudents || 14200
+      });
 
-        if (deptData && deptData.length > 0) {
-          const formattedDepts = deptData.map(d => ({
-            department: d.department,
-            studentCount: d.studentCount || 1000,
-            avgBurnoutScore: d.avgBurnoutScore || 50,
-            highRiskCount: d.highRiskCount || 0
-          }));
-          setDepartments(formattedDepts);
-        }
-
-        if (alertsData && alertsData.length > 0) {
-          const formattedAlerts = alertsData.map(a => ({
-            id: a.id,
-            type: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'CRITICAL_DETECTION' : 'WARNING',
-            time: new Date(a.triggeredAt || Date.now()).toLocaleTimeString(),
-            msg: `NODE ${a.pseudonym || a.studentAlias || 'Anonymized'}: ${a.message || `Burnout risk level ${a.score}`}`,
-            color: a.riskLevel === 'critical' || a.riskLevel === 'high' ? '#ffb4ab' : '#00dbe7',
-            action: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'DECODE_AND_INTERVENE' : null,
-            bg: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'rgba(255,180,171,0.05)' : 'rgba(32,31,32,0.5)',
-            border: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'rgba(255,180,171,0.3)' : undefined
-          }));
-          setAlerts(formattedAlerts);
-        }
-      } catch (err) {
-        console.error('Failed to fetch real-time analytics:', err);
-      } finally {
-        setLoading(false);
+      if (deptData && deptData.length > 0) {
+        const formattedDepts = deptData.map(d => ({
+          department: d.department,
+          studentCount: d.studentCount || 1000,
+          avgBurnoutScore: d.avgBurnoutScore || 50,
+          highRiskCount: d.highRiskCount || 0
+        }));
+        setDepartments(formattedDepts);
       }
+
+      if (alertsData && alertsData.length > 0) {
+        const formattedAlerts = alertsData.map(a => ({
+          id: a.id,
+          type: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'CRITICAL_DETECTION' : 'WARNING',
+          time: new Date(a.triggeredAt || Date.now()).toLocaleTimeString(),
+          msg: `NODE ${a.pseudonym || a.studentAlias || 'Anonymized'}: ${a.message || `Burnout risk level ${a.score}`}`,
+          color: a.riskLevel === 'critical' || a.riskLevel === 'high' ? '#ffb4ab' : '#00dbe7',
+          action: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'DECODE_AND_INTERVENE' : null,
+          bg: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'rgba(255,180,171,0.05)' : 'rgba(32,31,32,0.5)',
+          border: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'rgba(255,180,171,0.3)' : undefined
+        }));
+        setAlerts(formattedAlerts);
+      }
+    } catch (err) {
+      console.error('Failed to fetch real-time analytics:', err);
+    } finally {
+      setLoading(false);
     }
-    
-    load();
-    const interval = setInterval(load, 8000);
+  };
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -216,22 +216,31 @@ export default function WellPulse() {
     
     setActionLoading(true);
     try {
-      // If we have an actual alert ID, try acknowledging it on the backend
-      if (selectedAlert.id && selectedAlert.id.length > 5) {
+      const isRealAlert = selectedAlert.id && selectedAlert.id.length > 5;
+      
+      if (isRealAlert) {
+        // Wire to real API endpoint
+        await api.post(`/alerts/${selectedAlert.id}/intervene`, {
+          message: broadcastMsg,
+          protocol: interventionProto
+        });
         await api.put(`/alerts/${selectedAlert.id}/acknowledge`);
+        addToast(`Intervention dispatched and synced: [${interventionProto}] broadcasted to target cohort.`);
+      } else {
+        // Demo mode disclaimer
+        addToast(`[DEMO MODE] Intervention [${interventionProto}] broadcast simulated to cohort.`);
       }
       
       // Update UI state by removing the alert
       setAlerts(prev => prev.filter(a => a.id !== selectedAlert.id));
       setStats(prev => ({ ...prev, highRiskCount: Math.max(0, prev.highRiskCount - 1) }));
       
-      addToast(`Intervention dispatched: [${interventionProto}] broadcasted to target cohort.`);
       setActiveModal(null);
       setSelectedAlert(null);
       setBroadcastMsg('');
     } catch (err) {
       console.error('Failed to submit intervention:', err);
-      addToast("Failed to dispatch intervention.", "error");
+      addToast("Failed to dispatch intervention. System offline.", "error");
     } finally {
       setActionLoading(false);
     }
@@ -330,6 +339,13 @@ export default function WellPulse() {
                   style={{ background: 'rgba(32,31,32,0.4)', borderColor: 'rgba(255,255,255,0.08)', color: '#e5e2e3' }}
                 >
                   <Filter size={12} /> FILTERS
+                </button>
+                <button 
+                  onClick={loadData}
+                  className="border rounded-lg px-4 py-2 font-bold flex items-center gap-2 terminal-text text-[10px] transition-all hover:opacity-80 cursor-pointer"
+                  style={{ background: 'rgba(32,31,32,0.4)', borderColor: 'rgba(255,255,255,0.08)', color: '#e5e2e3' }}
+                >
+                  <RefreshCw size={12} /> REFRESH
                 </button>
               </div>
             </header>

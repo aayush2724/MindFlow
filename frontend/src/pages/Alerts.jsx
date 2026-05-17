@@ -71,13 +71,36 @@ export default function Alerts() {
                 </p>
               </div>
               <div className="flex gap-3">
-                <button className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80"
+                <button 
+                  onClick={() => {
+                    if (alerts.length === 0) return;
+                    const headers = ["Alert ID", "Type", "Message", "Risk Score", "Status", "Timestamp"];
+                    const rows = alerts.map(a => [
+                      a.id,
+                      a.type,
+                      `"${(a.message || '').replace(/"/g, '""')}"`,
+                      a.score ?? 0,
+                      acknowledged.includes(a.id) ? 'Acknowledged' : 'Pending',
+                      a.timestamp ? new Date(a.timestamp).toLocaleString() : 'N/A'
+                    ]);
+                    const csvContent = [headers.join(",")].concat(rows.map(r => r.join(","))).join("\n");
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", `mindflow_alerts_export_${Date.now()}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  disabled={alerts.length === 0}
+                  className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   style={{ background:'rgba(0,219,231,0.1)', borderColor:'rgba(0,219,231,0.3)', color:'#e1fdff' }}>
                   <span className="material-symbols-outlined text-[20px]">download</span> EXPORT_ALERTS
                 </button>
                 <button 
                   onClick={handleAcknowledgeAll}
-                  className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80"
+                  className="border rounded-lg px-5 py-2.5 font-bold flex items-center gap-2 terminal-text text-sm transition-all hover:opacity-80 cursor-pointer"
                   style={{ background:'rgba(32,31,32,0.4)', borderColor:'rgba(255,255,255,0.08)', color:'#e5e2e3' }}>
                   <span className="material-symbols-outlined text-[20px]">done_all</span> MARK_ALL_READ
                 </button>
@@ -103,57 +126,65 @@ export default function Alerts() {
           </motion.div>
 
           {/* Section 2: Alerts Feed */}
-          <div className="space-y-4 mb-12">
-            {alerts.map((alert, i) => {
-              const isAck = acknowledged.includes(alert.id);
-              const riskColor = alert.riskLevel === 'critical' ? '#ffb4ab' : '#D2FF00';
-              const riskLabel = alert.riskLevel === 'critical' ? 'CRITICAL' : 'HIGH_RISK';
+          {alerts.length === 0 && !loading ? (
+            <div className="rounded-3xl p-16 border text-center my-12" style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(255,255,255,0.08)' }}>
+              <span className="material-symbols-outlined text-4xl mb-4 text-[#00dbe7]">notifications_off</span>
+              <h3 className="font-semibold text-lg text-white mb-2" style={{ fontFamily: 'Space Grotesk' }}>No Cognitive Alerts</h3>
+              <p className="text-sm text-[#b9cacb] max-w-md mx-auto">All systems nominal. No unacknowledged stress alerts or risk interventions logged in this cohort cluster.</p>
+            </div>
+          ) : (
+            <div className="space-y-4 mb-12">
+              {alerts.map((alert, i) => {
+                const isAck = acknowledged.includes(alert.id);
+                const riskColor = alert.riskLevel === 'critical' ? '#ffb4ab' : '#D2FF00';
+                const riskLabel = alert.riskLevel === 'critical' ? 'CRITICAL' : 'HIGH_RISK';
 
-              return (
-                <motion.div key={alert.id} 
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className={`rounded-2xl p-6 border transition-all duration-500 ${isAck ? 'opacity-40' : ''}`}
-                  style={{ 
-                    background:'rgba(10,10,11,0.4)', 
-                    backdropFilter:'blur(40px)', 
-                    borderColor:'rgba(255,255,255,0.08)',
-                    borderLeft: `4px solid ${riskColor}`
-                  }}>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-lg" style={{ color:'#e1fdff' }}>{alert.pseudonym}</span>
-                        <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" 
-                          style={{ background:`${riskColor}1A`, color:riskColor, borderColor:`${riskColor}33` }}>
-                          {riskLabel}
-                        </span>
-                        {isAck && (
+                return (
+                  <motion.div key={alert.id} 
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }}
+                    className={`rounded-2xl p-6 border transition-all duration-500 ${isAck ? 'opacity-40' : ''}`}
+                    style={{ 
+                      background:'rgba(10,10,11,0.4)', 
+                      backdropFilter:'blur(40px)', 
+                      borderColor:'rgba(255,255,255,0.08)',
+                      borderLeft: `4px solid ${riskColor}`
+                    }}>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between w-full gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-lg" style={{ color:'#e1fdff' }}>{alert.pseudonym}</span>
                           <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" 
-                            style={{ background:'rgba(0,219,231,0.1)', color:'#00dbe7', borderColor:'rgba(0,219,231,0.3)' }}>
-                            RESOLVED
+                            style={{ background:`${riskColor}1A`, color:riskColor, borderColor:`${riskColor}33` }}>
+                            {riskLabel}
                           </span>
-                        )}
+                          {isAck && (
+                            <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" 
+                              style={{ background:'rgba(0,219,231,0.1)', color:'#00dbe7', borderColor:'rgba(0,219,231,0.3)' }}>
+                              RESOLVED
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-6 shrink-0">
+                          <span className="text-xs terminal-text opacity-40" style={{ color:'#b9cacb' }}>{alert.triggeredAt}</span>
+                          {!isAck && (
+                            <button 
+                              onClick={() => handleAcknowledge(alert.id)}
+                              className="terminal-text text-[10px] font-bold uppercase underline underline-offset-4 transition-colors hover:text-[#D2FF00] cursor-pointer" 
+                              style={{ color:'#e1fdff' }}>
+                              ACKNOWLEDGE
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-6 shrink-0">
-                        <span className="text-xs terminal-text opacity-40" style={{ color:'#b9cacb' }}>{alert.triggeredAt}</span>
-                        {!isAck && (
-                          <button 
-                            onClick={() => handleAcknowledge(alert.id)}
-                            className="terminal-text text-[10px] font-bold uppercase underline underline-offset-4 transition-colors hover:text-[#D2FF00]" 
-                            style={{ color:'#e1fdff' }}>
-                            ACKNOWLEDGE
-                          </button>
-                        )}
+                      <div className="terminal-text text-sm" style={{ color:'#b9cacb' }}>
+                        BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.score}</span>
                       </div>
                     </div>
-                    <div className="terminal-text text-sm" style={{ color:'#b9cacb' }}>
-                      BURNOUT_SCORE: <span style={{ color:riskColor }}>{alert.score}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Section 3: Empty State */}
           {isAllCleared && (

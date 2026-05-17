@@ -20,7 +20,10 @@ export default function Resources() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeSession, setActiveSession] = useState(null);
-  const [engagedMinutes, setEngagedMinutes] = useState(15);
+  const [engagedMinutes, setEngagedMinutes] = useState(() => {
+    const saved = localStorage.getItem('mf_engaged_minutes');
+    return saved !== null ? parseInt(saved, 10) : 15;
+  });
   const [showHistory, setShowHistory] = useState(false);
   
   const handleStartSession = (res) => {
@@ -29,7 +32,11 @@ export default function Resources() {
 
   const handleSessionComplete = (minutes) => {
     if (minutes > 0) {
-      setEngagedMinutes(prev => Math.min(prev + minutes, 20)); // Cap at 20 for the goal
+      setEngagedMinutes(prev => {
+        const newValue = Math.min(prev + minutes, 20); // Cap at 20 for the goal
+        localStorage.setItem('mf_engaged_minutes', newValue.toString());
+        return newValue;
+      });
     }
     setActiveSession(null);
   };
@@ -176,7 +183,36 @@ export default function Resources() {
             onComplete={handleSessionComplete} 
           />
         )}
-        {activeSession && (activeSession.type === 'audio' || activeSession.type === 'video') && (
+        {activeSession && activeSession.type === 'video' && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-3xl glass-panel rounded-[2rem] p-8 border hud-border relative">
+              <button onClick={() => setActiveSession(null)} className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors cursor-pointer" style={{ background: 'none', border: 'none' }}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+              <h3 className="font-bold text-2xl mb-2 text-[#e1fdff]" style={{ fontFamily: 'Space Grotesk' }}>{activeSession.title}</h3>
+              <p className="text-xs terminal-text text-[#00f2ff] tracking-widest mb-6">VIDEO STREAMING ACTIVE • {activeSession.duration}</p>
+              
+              <div className="w-full aspect-video rounded-2xl overflow-hidden border border-white/10 bg-zinc-950 relative flex items-center justify-center">
+                <iframe 
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1" 
+                  title="YouTube video player" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                ></iframe>
+              </div>
+              
+              <div className="flex justify-between items-center mt-6">
+                <p className="text-xs text-white/40">Visualized cognitive therapy streaming session</p>
+                <button onClick={() => handleSessionComplete(12)} className="border rounded-lg px-4 py-2 font-bold terminal-text text-[10px] bg-[#D2FF00]/10 border-[#D2FF00]/30 text-[#D2FF00] hover:bg-[#D2FF00]/20 transition-all cursor-pointer">
+                  MARK_SESSION_COMPLETE
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+        {activeSession && activeSession.type === 'audio' && (
           <AudioSessionModal 
             key="audio" 
             session={activeSession} 

@@ -14,14 +14,17 @@ export default function Dashboard() {
   const [history, setHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function load() {
       try {
         const [scoreRes, historyRes, calendarRes] = await Promise.all([
-          api.get('/burnout/me'),
-          api.get('/burnout/me/history'),
-          api.get('/calendar/me')
+          api.get('/burnout/me', { signal: controller.signal }),
+          api.get('/burnout/me/history', { signal: controller.signal }),
+          api.get('/calendar/me', { signal: controller.signal })
         ]);
         
         if (scoreRes.data.hasData) {
@@ -40,9 +43,12 @@ export default function Dashboard() {
         })));
 
         setEvents(calendarRes.data);
+        setErrorCount(0);
       } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-        // Silently fail for polling, but keep old data
+        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+          console.error('Failed to fetch dashboard data:', err);
+          setErrorCount(prev => prev + 1);
+        }
       } finally {
         setLoading(false);
       }
@@ -50,7 +56,10 @@ export default function Dashboard() {
     
     load();
     const poll = setInterval(load, 30000); // Sync every 30s for real-time feel
-    return () => clearInterval(poll);
+    return () => {
+      clearInterval(poll);
+      controller.abort();
+    };
   }, [user]);
 
   // Real-time Academic Load Calculation (Weekly)
@@ -66,9 +75,9 @@ export default function Dashboard() {
 
 
 
-  const score = burnout?.score ?? 12;
-  const label = score < 30 ? 'Zen' : score < 60 ? 'Aware' : 'Strained';
-  const sublabel = score < 30 ? 'OPTIMAL FLOW STATE' : score < 60 ? 'MONITOR CLOSELY' : 'TAKE A BREAK';
+  const score = burnout?.score ?? null;
+  const label = score === null ? 'SYNCING...' : score < 30 ? 'Zen' : score < 60 ? 'Aware' : 'Strained';
+  const sublabel = score === null ? 'CONNECTING TELEMETRY' : score < 30 ? 'OPTIMAL FLOW STATE' : score < 60 ? 'MONITOR CLOSELY' : 'TAKE A BREAK';
 
   // Build 7-day academic load chart from real events
   const days = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
@@ -78,6 +87,7 @@ export default function Dashboard() {
     const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
 
     events.forEach(ev => {
+      if (!ev.startTime) return;
       const d = parseISO(ev.startTime);
       if (isSameWeek(d, now, { weekStartsOn: 1 })) {
         const dayIdx = (d.getDay() + 6) % 7; // Map Sun=0 to 6, Mon=1 to 0
@@ -88,6 +98,51 @@ export default function Dashboard() {
     // Normalize: let's say a 'max' day is 15 weight units
     return weights.map(w => Math.max(10, Math.min(95, (w / 15) * 100)));
   }, [events]);
+
+  if (loading) {
+    return (
+      <div style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
+        <Sidebar active="dashboard" />
+        <Header 
+          title={`Welcome back, ${user?.displayName || 'Student'}`} 
+          subtext="ESTABLISHING_NEURAL_LINK..." 
+        />
+        <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
+              {/* Orb Card Skeleton */}
+              <div className="lg:col-span-8 glass-panel rounded-[2rem] p-10 flex flex-col items-center justify-center relative overflow-hidden min-h-[550px] hud-border animate-pulse">
+                <div className="w-64 h-64 rounded-full border border-white/5 flex items-center justify-center bg-white/[0.01]">
+                  <div className="w-48 h-48 rounded-full border border-white/5 flex items-center justify-center bg-white/[0.02]">
+                    <div className="w-32 h-32 rounded-full bg-white/[0.03]" />
+                  </div>
+                </div>
+                <div className="h-4 bg-white/10 rounded w-48 mt-8" />
+                <div className="h-3 bg-white/5 rounded w-32 mt-4" />
+              </div>
+              {/* Right Cards Skeleton */}
+              <div className="lg:col-span-4 flex flex-col gap-8">
+                <div className="glass-panel rounded-[2rem] p-8 flex-1 hud-border animate-pulse flex flex-col justify-between" style={{ minHeight: '260px' }}>
+                  <div className="space-y-4">
+                    <div className="h-6 bg-white/10 rounded w-3/4" />
+                    <div className="h-4 bg-white/5 rounded w-1/2" />
+                  </div>
+                  <div className="h-20 bg-white/5 rounded-2xl w-full" />
+                </div>
+                <div className="glass-panel rounded-[2rem] p-8 flex-1 hud-border animate-pulse flex flex-col justify-between" style={{ minHeight: '260px' }}>
+                  <div className="space-y-4">
+                    <div className="h-6 bg-white/10 rounded w-3/4" />
+                    <div className="h-4 bg-white/5 rounded w-1/2" />
+                  </div>
+                  <div className="h-20 bg-white/5 rounded-2xl w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
@@ -100,6 +155,15 @@ export default function Dashboard() {
       {/* Main */}
       <main className="pt-24 pb-0 px-6 md:ml-64 min-h-screen relative">
         <div className="max-w-7xl mx-auto">
+          {errorCount >= 3 && (
+            <div className="mb-6 p-4 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-mono flex items-center justify-between z-50 relative">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined animate-pulse text-sm">warning</span>
+                <span>TELEMETRY_SYNC_FAILURE: Failed to establish persistent sync link with neural core. Displaying offline/cached metrics.</span>
+              </div>
+              <button onClick={() => setErrorCount(0)} className="text-[10px] uppercase underline underline-offset-2 hover:text-white cursor-pointer font-bold">DISMISS</button>
+            </div>
+          )}
           {/* Hero Bento */}
           <div className="pb-12">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
@@ -114,7 +178,7 @@ export default function Dashboard() {
                   <p className="text-[9px] terminal-text tracking-[0.3em] animate-pulse mb-4" style={{ color:'#D2FF00' }}>NEURAL ENGINE PROCESSING</p>
                   <div className="flex items-center justify-center gap-4">
                     <div className="h-px w-12" style={{ background:'rgba(210,255,0,0.4)' }} />
-                    <p className="terminal-text text-sm">BURNOUT_PROBABILITY: <span className="font-bold" style={{ color:'#D2FF00' }}>{score}%</span></p>
+                    <p className="terminal-text text-sm">BURNOUT_PROBABILITY: <span className="font-bold" style={{ color:'#D2FF00' }}>{score !== null ? `${score}%` : 'CALCULATING...'}</span></p>
                     <div className="h-px w-12" style={{ background:'rgba(210,255,0,0.4)' }} />
                   </div>
                 </div>

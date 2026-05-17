@@ -198,6 +198,8 @@ const addEvent = async (req, res, next) => {
       return res.status(400).json({ error: 'Title, startTime, and endTime are required' });
     }
 
+    const weight = Math.min(5, Math.max(1, Number(stressWeight) || 1));
+
     let docRefId = 'mock_' + Date.now();
     try {
       const docRef = await db.collection('calendar_events').add({

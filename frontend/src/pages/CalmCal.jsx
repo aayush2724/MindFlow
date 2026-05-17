@@ -59,7 +59,9 @@ export default function CalmCal() {
   }, [selectedDate]);
 
   const handleAddEvent = async (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     
     // Prepare data
     const startIso = `${newEvent.startDate}T${newEvent.startTime}:00`;
@@ -117,7 +119,10 @@ export default function CalmCal() {
     const days = eachDayOfInterval({ start: intervalStart, end: intervalEnd });
     
     return days.map(day => {
-      const dayEvents = heatmap.filter(event => isSameDay(parseISO(event.startTime), day));
+      const dayEvents = heatmap.filter(event => {
+        if (!event.startTime) return false;
+        return isSameDay(parseISO(event.startTime), day);
+      });
       const totalWeight = dayEvents.reduce((acc, curr) => acc + curr.stressWeight, 0);
       const count = dayEvents.length;
       
@@ -152,8 +157,14 @@ export default function CalmCal() {
   }, [view, heatmap]);
 
   const selectedDayEvents = useMemo(() => {
-    return heatmap.filter(event => isSameDay(parseISO(event.startTime), selectedDate))
-      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    return heatmap.filter(event => {
+      if (!event.startTime) return false;
+      return isSameDay(parseISO(event.startTime), selectedDate);
+    })
+      .sort((a, b) => {
+        if (!a.startTime || !b.startTime) return 0;
+        return new Date(a.startTime) - new Date(b.startTime);
+      });
   }, [selectedDate, heatmap]);
 
   // Weekly metrics calculation
@@ -163,6 +174,7 @@ export default function CalmCal() {
     const end = addDays(start, 6);
     
     const weekEvents = heatmap.filter(event => {
+      if (!event.startTime) return false;
       const d = parseISO(event.startTime);
       return d >= start && d <= end;
     });

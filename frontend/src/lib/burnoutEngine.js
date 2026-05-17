@@ -13,11 +13,21 @@ const WEIGHTS = {
 
 /**
  * @param {Object} checkin
- * @param {number} checkin.mood       1-10 (10 = best)
- * @param {number} checkin.sleep      hours (0-12)
- * @param {number} checkin.workload   1-10 (10 = most overwhelming)
- * @param {number} checkin.stress     1-10 (10 = extreme stress)
+ * @param {number} checkin.mood       1-10 (10 = best)        -> Maps to backend 'moodScore'
+ * @param {number} checkin.sleep      hours (0-12)            -> Maps to backend 'sleepHours'
+ * @param {number} checkin.workload   1-10 (10 = overwhelming) -> Maps to backend 'workloadRating'
+ * @param {number} checkin.stress     1-10 (10 = extreme)      -> Maps to backend 'stressLevel'
  * @returns {{ score: number, level: string, color: string, advice: string[] }}
+ *
+ * NOTE ON SCHEMA UNIFICATION:
+ * Frontend local check-in inputs use short names (mood, sleep, workload, stress) to compute real-time
+ * gauge outputs on the UI check-in screen. When submitting, CheckIn.jsx maps these properties to the
+ * persistent backend variables:
+ * - mood     -> moodScore
+ * - sleep    -> sleepHours
+ * - workload -> workloadRating
+ * - stress   -> stressLevel
+ * This matches the schema calculated by the backend Scoring engine (scoring.js).
  */
 export function calculateBurnoutScore({ mood = 5, sleep = 7, workload = 5, stress = 5 }) {
   // Normalise each dimension to 0-100 risk contribution

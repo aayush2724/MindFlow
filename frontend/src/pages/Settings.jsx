@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
+import { storage, DEMO_MODE } from '../lib/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AccountSettings() {
   const { user, logout, updateUserProfile } = useAuth();
+  const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [avatar, setAvatar] = useState(user?.photoURL || null);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
     email: user?.email || '',
@@ -18,6 +22,7 @@ export default function AccountSettings() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatar(reader.result);
@@ -28,9 +33,17 @@ export default function AccountSettings() {
 
   const handleSave = async () => {
     try {
+      let finalPhotoURL = avatar;
+
+      if (!DEMO_MODE && avatarFile) {
+        const refInstance = storageRef(storage, `avatars/${user?.uid || Date.now()}`);
+        await uploadBytes(refInstance, avatarFile);
+        finalPhotoURL = await getDownloadURL(refInstance);
+      }
+
       await updateUserProfile({
         displayName: formData.displayName,
-        photoURL: avatar,
+        photoURL: finalPhotoURL,
         semester: formData.semester
       });
       setIsEditing(false);
@@ -83,13 +96,13 @@ export default function AccountSettings() {
                     </div>
                     <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl border-2 border-dashed border-[#D2FF00]/40">
                       <span className="material-symbols-outlined text-[#D2FF00] text-3xl">add_a_photo</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
                     </label>
                   </div>
                   
                   <div className="flex gap-3">
                     <button 
-                      onClick={() => document.querySelector('input[type="file"]').click()}
+                      onClick={() => fileInputRef.current?.click()}
                       className="px-4 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] terminal-text font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
                     >
                       Change Photo

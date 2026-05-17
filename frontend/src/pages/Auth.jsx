@@ -21,13 +21,17 @@ export default function Auth() {
     setError('');
     try {
       let isNew = false;
+      let userRole = 'student';
       if (tab === 'signin') {
-        await login(email, password);
+        const res = await login(email, password);
+        isNew = res?.isNewUser;
+        userRole = res?.role || 'student';
       } else {
         const res = await signup(email, password, name || 'Student', signupRole);
         isNew = res?.isNewUser;
+        userRole = signupRole;
       }
-      navigate(isNew ? '/onboarding' : (signupRole === 'counselor' ? '/wellpulse' : '/dashboard'));
+      navigate(isNew ? '/onboarding' : (userRole === 'counselor' ? '/wellpulse' : '/dashboard'));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -40,8 +44,7 @@ export default function Auth() {
     setError('');
     try {
       localStorage.setItem('mf_signup_role', tab === 'signup' ? signupRole : 'student');
-      const res = await loginWithGoogle();
-      navigate(res?.isNewUser ? '/onboarding' : '/dashboard');
+      await loginWithGoogle();
     } catch (err) {
       setError(err.message);
     } finally {

@@ -14,6 +14,8 @@ export default function Auth() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [signupRole, setSignupRole] = useState('student');
+  const showDemo = import.meta.env.VITE_HIDE_DEMO !== 'true' && 
+                   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -185,26 +187,30 @@ export default function Auth() {
             GOOGLE AUTH
           </button>
 
-          <div className="flex items-center gap-4 mb-6 relative z-10">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">System Demo</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
+          {showDemo && (
+            <>
+              <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">System Demo</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
 
-          <div className="flex flex-row gap-4 relative z-10">
-            <button onClick={() => handleDemoLogin(false)} disabled={loading}
-              className="flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 border transition-all"
-              style={{ background: 'transparent', borderColor: 'rgba(0,219,231,0.2)', color: '#00DBE7', boxShadow: 'inset 0 0 10px rgba(0,219,231,0.05)' }}>
-              <span className="material-symbols-outlined text-[14px]">science</span>
-              STUDENT
-            </button>
-            <button onClick={() => handleDemoLogin(true)} disabled={loading}
-              className="flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 border transition-all"
-              style={{ background: 'transparent', borderColor: 'rgba(210,255,0,0.2)', color: '#D2FF00', boxShadow: 'inset 0 0 10px rgba(210,255,0,0.05)' }}>
-              <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
-              COUNSELOR
-            </button>
-          </div>
+              <div className="flex flex-row gap-4 relative z-10">
+                <button onClick={() => handleDemoLogin(false)} disabled={loading}
+                  className="flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 border transition-all"
+                  style={{ background: 'transparent', borderColor: 'rgba(0,219,231,0.2)', color: '#00DBE7', boxShadow: 'inset 0 0 10px rgba(0,219,231,0.05)' }}>
+                  <span className="material-symbols-outlined text-[14px]">science</span>
+                  STUDENT
+                </button>
+                <button onClick={() => handleDemoLogin(true)} disabled={loading}
+                  className="flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 border transition-all"
+                  style={{ background: 'transparent', borderColor: 'rgba(210,255,0,0.2)', color: '#D2FF00', boxShadow: 'inset 0 0 10px rgba(210,255,0,0.05)' }}>
+                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
+                  COUNSELOR
+                </button>
+              </div>
+            </>
+          )}
         </div>
         
         <p className="text-center text-[10px] tracking-widest text-white/20 mt-8 font-mono">

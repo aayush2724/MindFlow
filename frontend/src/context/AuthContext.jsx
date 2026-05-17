@@ -61,6 +61,7 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('google_signup_pending');
         }
 
+        const isCounselorEmail = firebaseUser.email && firebaseUser.email.toLowerCase().includes('counselor');
         try {
           // Fetch profile from our backend via Express API (robust and bypasses client permission rules)
           const { data: profile } = await api.get('/users/me');
@@ -69,18 +70,25 @@ export function AuthProvider({ children }) {
           setUser({ 
             ...firebaseUser, 
             ...profile, 
+            role: isCounselorEmail ? 'counselor' : (profile.role || 'student'),
             onboarded: true 
           });
-          setRole(profile.role || 'student');
+          setRole(isCounselorEmail ? 'counselor' : (profile.role || 'student'));
         } catch (err) {
           console.error('Profile fetch failed:', err.message);
           
           const is404 = err.response && err.response.status === 404;
-          const isCounselorEmail = firebaseUser.email && firebaseUser.email.toLowerCase().includes('counselor');
           const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true' || isCounselorEmail;
 
           // Avoid overwriting/downgrading active local states if signup/onboarding flow is currently in progress
           setUser(prev => {
+            if (isCounselorEmail) {
+              return {
+                ...firebaseUser,
+                role: 'counselor',
+                onboarded: true
+              };
+            }
             if (prev && prev.uid === firebaseUser.uid) {
               return {
                 ...firebaseUser,
@@ -129,23 +137,24 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    const isCounselorEmail = email && email.toLowerCase().includes('counselor');
     try {
       const { data: profile } = await api.get('/users/me');
       
-      if (profile.role !== 'counselor') {
+      if (profile.role !== 'counselor' && !isCounselorEmail) {
         localStorage.setItem('mf_onboarding', 'true');
       }
       
       setUser({ 
         ...cred.user, 
         ...profile, 
+        role: isCounselorEmail ? 'counselor' : (profile.role || 'student'),
         onboarded: true
       });
-      setRole(profile.role || 'student');
-      return { isNewUser: false, role: profile.role || 'student' };
+      setRole(isCounselorEmail ? 'counselor' : (profile.role || 'student'));
+      return { isNewUser: false, role: isCounselorEmail ? 'counselor' : (profile.role || 'student') };
     } catch (err) {
       console.error('No profile found, treating as new user:', err);
-      const isCounselorEmail = email && email.toLowerCase().includes('counselor');
       
       setUser({ 
         ...cred.user, 

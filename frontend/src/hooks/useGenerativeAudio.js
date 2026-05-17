@@ -7,7 +7,7 @@ export function useGenerativeAudio() {
 
   const startSession = (type = 'alpha') => {
     try {
-      if (!ctxRef.current) {
+      if (!ctxRef.current || ctxRef.current.state === 'closed') {
         ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
       const ctx = ctxRef.current;
@@ -23,12 +23,45 @@ export function useGenerativeAudio() {
         nodesRef.current = [];
       }
 
-      // 1. Binaural Oscillator setup
-      const baseFreq = 136.1; // OM frequency (calming/grounding)
-      let beatFreq = 10; // Default Alpha
-      if (type.toLowerCase().includes('focus')) beatFreq = 15; // Beta for focus
-      if (type.toLowerCase().includes('calm') || type.toLowerCase().includes('sleep')) beatFreq = 5; // Theta for calm/sleep
+      // 1. Identify Profile
+      const t = type.toLowerCase();
+      let baseFreq = 136.1; // OM
+      let beatFreq = 10;
+      let padWave = 'triangle';
+      let filterFreq = 400;
+      let interval1 = 0.5; // Octave down
+      let interval2 = 1.5; // Perfect fifth
 
+      if (t.includes('focus') || t.includes('alpha')) {
+        baseFreq = 256; // Brighter C4
+        beatFreq = 15; // Beta
+        padWave = 'sine';
+        filterFreq = 800; // Brighter
+        interval1 = 1.25; // Major third
+        interval2 = 1.5; // Perfect fifth
+      } else if (t.includes('sleep') || t.includes('rest')) {
+        baseFreq = 85; // Deep bass
+        beatFreq = 4; // Delta
+        padWave = 'sine';
+        filterFreq = 150; // Very dark
+        interval1 = 0.5; // Octave down
+        interval2 = 2.0; // Octave up
+      } else if (t.includes('calm') || t.includes('therapy')) {
+        baseFreq = 174; // Healing frequency
+        beatFreq = 6; // Theta
+        padWave = 'triangle';
+        filterFreq = 300; // Warm
+        interval1 = 1.2; // Minor third (calming)
+        interval2 = 1.5; // Perfect fifth
+      } else {
+        // Education/Video default (ambient white noise with slight tone)
+        baseFreq = 200;
+        beatFreq = 0; // No binaural
+        padWave = 'triangle';
+        filterFreq = 600;
+      }
+
+      // 2. Binaural Oscillator setup
       const leftOsc = ctx.createOscillator();
       const rightOsc = ctx.createOscillator();
       const mainGain = ctx.createGain();
@@ -40,7 +73,6 @@ export function useGenerativeAudio() {
         leftPan.pan.value = -1;
         rightPan.pan.value = 1;
       } else {
-        // Fallback for older browsers
         leftPan = ctx.createGain();
         rightPan = ctx.createGain();
       }
@@ -55,16 +87,16 @@ export function useGenerativeAudio() {
       leftPan.connect(mainGain);
       rightPan.connect(mainGain);
 
-      // 2. Breathing Drone (Warm Pad)
+      // 3. Breathing Drone (Warm Pad)
       const padOsc1 = ctx.createOscillator();
       const padOsc2 = ctx.createOscillator();
       const padOsc3 = ctx.createOscillator();
-      padOsc1.type = 'triangle';
-      padOsc2.type = 'triangle';
+      padOsc1.type = padWave;
+      padOsc2.type = padWave;
       padOsc3.type = 'sine';
       
-      padOsc1.frequency.value = baseFreq / 2; // Octave down
-      padOsc2.frequency.value = baseFreq * 1.5; // Perfect fifth
+      padOsc1.frequency.value = baseFreq * interval1;
+      padOsc2.frequency.value = baseFreq * interval2;
       padOsc3.frequency.value = baseFreq;
 
       const padGain = ctx.createGain();
@@ -72,14 +104,14 @@ export function useGenerativeAudio() {
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.value = 400; // Warm, muffled start
+      filter.frequency.value = filterFreq;
 
       // LFO for filter breathing effect (approx 6 seconds per breath cycle)
       const lfo = ctx.createOscillator();
       lfo.type = 'sine';
       lfo.frequency.value = 1 / 6; // 6 seconds
       const lfoGain = ctx.createGain();
-      lfoGain.gain.value = 300; // Modulate frequency by 300Hz
+      lfoGain.gain.value = filterFreq * 0.8; // Sweep depth depends on base filter
 
       lfo.connect(lfoGain);
       lfoGain.connect(filter.frequency);
@@ -144,10 +176,10 @@ export function useGenerativeAudio() {
 
   const togglePause = () => {
     if (ctxRef.current) {
-      if (ctxRef.current.state === 'running') {
+      if (isPlaying) {
         ctxRef.current.suspend();
         setIsPlaying(false);
-      } else if (ctxRef.current.state === 'suspended') {
+      } else {
         ctxRef.current.resume();
         setIsPlaying(true);
       }

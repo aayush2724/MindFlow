@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import AudioSessionModal from '../components/resources/AudioSessionModal';
 import ArticleModal from '../components/resources/ArticleModal';
 import BreathingModal from '../components/resources/BreathingModal';
+import HistoryModal from '../components/resources/HistoryModal';
 
 const MOCK_RESOURCES = [
   { id: 1, type: 'article', title: 'Cognitive Reframing Techniques', duration: '5 min read', category: 'Therapy', icon: 'psychology' },
@@ -20,6 +21,7 @@ export default function Resources() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeSession, setActiveSession] = useState(null);
   const [engagedMinutes, setEngagedMinutes] = useState(15);
+  const [showHistory, setShowHistory] = useState(false);
   
   const handleStartSession = (res) => {
     setActiveSession(res);
@@ -105,7 +107,9 @@ export default function Resources() {
                   </div>
                 </div>
               </div>
-              <button className="w-full py-3 rounded-lg border border-white/10 text-xs font-bold tracking-widest text-white/60 hover:bg-white/5 transition-colors">
+              <button 
+                onClick={() => setShowHistory(true)}
+                className="w-full py-3 rounded-lg border border-white/10 text-xs font-bold tracking-widest text-white/60 hover:bg-white/5 transition-colors">
                 VIEW HISTORY
               </button>
             </motion.div>
@@ -178,6 +182,13 @@ export default function Resources() {
             session={activeSession} 
             onClose={() => setActiveSession(null)} 
             onComplete={handleSessionComplete} 
+          />
+        )}
+        {showHistory && (
+          <HistoryModal 
+            key="history"
+            engagedMinutes={engagedMinutes}
+            onClose={() => setShowHistory(false)}
           />
         )}
       </AnimatePresence>

@@ -8,7 +8,7 @@ const api = axios.create({
 // Add a request interceptor to add the Firebase token
 api.interceptors.request.use(
   async (config) => {
-    const user = auth.currentUser;
+    const user = auth ? auth.currentUser : null;
     if (user) {
       const token = await user.getIdToken();
       config.headers.Authorization = `Bearer ${token}`;

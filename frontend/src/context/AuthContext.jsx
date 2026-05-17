@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import api from '../lib/api';
-import { auth, googleProvider } from '../lib/firebase';
+import { isFirebaseConfigured, auth, googleProvider } from '../lib/firebase';
 import {
   onAuthStateChanged,
   signOut,
@@ -19,6 +19,11 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState('student'); // 'student' | 'counselor'
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     const checkRedirect = async () => {
       try {
         const result = await getRedirectResult(auth);
@@ -191,7 +196,17 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, logout, login, signup, loginWithGoogle, updateUserProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      role, 
+      logout, 
+      login, 
+      signup, 
+      loginWithGoogle, 
+      updateUserProfile,
+      firebaseConfigMissing: !isFirebaseConfigured
+    }}>
       {children}
     </AuthContext.Provider>
   );

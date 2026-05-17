@@ -13,11 +13,34 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
-const storage = getStorage(app);
+const isFirebaseConfigured = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== 'undefined' &&
+  firebaseConfig.apiKey !== ''
+);
 
-export { auth, db, googleProvider, storage };
+let app = null;
+let auth = null;
+let db = null;
+let googleProvider = null;
+let storage = null;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    googleProvider = new GoogleAuthProvider();
+    storage = getStorage(app);
+  } catch (err) {
+    console.error('Firebase initialization failed:', err.message);
+  }
+} else {
+  console.warn(
+    'Firebase is not configured! Please configure your environment variables ' +
+    '(VITE_FIREBASE_API_KEY, etc.) in your Vercel project settings or .env file.'
+  );
+}
+
+export { isFirebaseConfigured, auth, db, googleProvider, storage };
 export default app;

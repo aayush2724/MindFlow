@@ -52,7 +52,7 @@ export default function Support() {
       <Header title="Support Command" subtext="Connect with counselor assistance and institution-wide help resources" />
 
       {/* Main Container */}
-      <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
+      <main className="pt-28 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
         <div className="max-w-7xl mx-auto">
           
           {/* Main Layout Grid */}

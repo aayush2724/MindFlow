@@ -59,7 +59,7 @@ export default function Alerts() {
       <Header title="Cognitive Alerts" subtext="Automated stress warnings and risk-level interventions" searchPlaceholder="SEARCH_ALERTS..." onSearch={setSearch} />
 
       {/* Main */}
-      <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
+      <main className="pt-24 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
         <div className="max-w-5xl mx-auto">
           {/* Section 1: Header + KPIs */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="rounded-3xl p-6 md:p-8 mb-12 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"

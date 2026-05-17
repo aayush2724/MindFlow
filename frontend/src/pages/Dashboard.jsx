@@ -117,7 +117,7 @@ export default function Dashboard() {
           title={`Welcome back, ${user?.displayName || 'Student'}`}
           subtext="ESTABLISHING_NEURAL_LINK..."
         />
-        <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
+        <main className="pt-28 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
               {/* Orb Card Skeleton */}
@@ -163,7 +163,7 @@ export default function Dashboard() {
       />
 
       {/* Main */}
-      <main className="pt-24 pb-0 px-6 md:ml-64 min-h-screen relative">
+      <main className="pt-24 pb-24 md:pb-0 px-6 md:ml-64 min-h-screen relative main-with-sidebar">
         <div className="max-w-7xl mx-auto">
           {errorCount >= 3 && (
             <div className="mb-6 p-4 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-mono flex items-center justify-between z-50 relative">
@@ -213,7 +213,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 {/* Stats row */}
-                <div className="mt-12 flex gap-12 z-10 w-full justify-center">
+                <div className="mt-8 md:mt-12 flex flex-wrap gap-6 md:gap-12 z-10 w-full justify-center">
                   {[['STRESS_LEVEL', score === null ? '---' : score < 30 ? 'LOW' : score < 60 ? 'MED' : 'HIGH'],
                   ['ACADEMIC_LOAD', academicLoad.label.toUpperCase()],
                   ['SLEEP_QLTY', score === null ? '---' : `${Math.max(15, Math.round(100 - score * 0.8))}%`]].map(([k, v]) => (

@@ -77,7 +77,7 @@ export default function AccountSettings() {
       <Sidebar active="settings" />
       <Header title="Account Settings" subtext="USER_PROFILE: ACTIVE" />
 
-      <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
+      <main className="pt-28 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
         <div className="max-w-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -220,7 +220,7 @@ export default function AccountSettings() {
             animate={{ opacity: 1, y: 0, scale: 1 }} 
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             style={{ 
-              position: 'fixed', bottom: 32, right: 32, zIndex: 1000, 
+              position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', right: 16, zIndex: 1000, 
               background: 'rgba(14, 14, 15, 0.95)', backdropFilter: 'blur(20px)',
               border: toast.type === 'success' ? '1px solid rgba(0, 219, 231, 0.3)' : toast.type === 'error' ? '1px solid rgba(255, 180, 171, 0.3)' : '1px solid rgba(0, 219, 231, 0.1)',
               boxShadow: toast.type === 'success' ? '0 10px 30px rgba(0, 219, 231, 0.2)' : toast.type === 'error' ? '0 10px 30px rgba(255, 180, 171, 0.2)' : '0 10px 30px rgba(0, 219, 231, 0.05)',

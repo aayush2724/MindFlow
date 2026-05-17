@@ -121,7 +121,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6 pt-24 z-10">
+    <div className="relative min-h-screen flex flex-col lg:flex-row items-center justify-center gap-8 p-6 pt-24 z-10">
       {/* Animated floating orbs — premium depth behind the card */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         {[
@@ -269,6 +269,53 @@ export default function Auth() {
         <p className="text-center text-[10px] tracking-widest text-white/20 mt-8 font-mono">
           ALL DATA ANONYMIZED. END-TO-END ENCRYPTED.
         </p>
+      </motion.div>
+
+      {/* Test Credentials Side Panel */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="glass-panel w-full max-w-sm"
+        style={{
+          borderRadius: 24,
+          border: '1px solid rgba(0, 219, 231, 0.2)',
+          background: 'rgba(3, 3, 5, 0.6)',
+          backdropFilter: 'blur(30px)',
+          padding: '28px',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 219, 231, 0.05)',
+          color: '#e1fdff',
+          fontFamily: 'Space Grotesk, sans-serif'
+        }}
+      >
+        <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#D2FF00', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+          Demo Access Keys
+        </h3>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Counselor credentials */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize: '10px', color: '#c084fc', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Counselor Dashboard</div>
+            <div style={{ fontSize: '13px', fontFamily: 'JetBrains Mono', color: '#e1fdff', marginBottom: '4px' }}>
+              <span style={{ opacity: 0.4 }}>ID:</span> counselor@university.edu
+            </div>
+            <div style={{ fontSize: '13px', fontFamily: 'JetBrains Mono', color: '#e1fdff' }}>
+              <span style={{ opacity: 0.4 }}>PW:</span> mindflow2026
+            </div>
+          </div>
+
+          {/* Student credentials */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize: '10px', color: '#00DBE7', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Student Dashboard</div>
+            <div style={{ fontSize: '13px', fontFamily: 'JetBrains Mono', color: '#e1fdff', marginBottom: '4px' }}>
+              <span style={{ opacity: 0.4 }}>ID:</span> student@university.edu
+            </div>
+            <div style={{ fontSize: '13px', fontFamily: 'JetBrains Mono', color: '#e1fdff' }}>
+              <span style={{ opacity: 0.4 }}>PW:</span> mindflow2026
+            </div>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

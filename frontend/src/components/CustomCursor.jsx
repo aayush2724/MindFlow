@@ -62,7 +62,10 @@ export default function CustomCursor() {
     };
   }, [mouseX, mouseY, dotX, dotY, hasMoved]);
 
-  if (!hasMoved) return null;
+  // Don't render the custom cursor on touch / pointer-coarse devices (phones, tablets)
+  const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  if (isTouchDevice || !hasMoved) return null;
+
 
   return (
     <>

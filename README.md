@@ -13,6 +13,22 @@ MindFlow is a high-fidelity, end-to-end platform designed for educational instit
 
 ---
 
+## 🧑‍⚖️ For Hackathon Judges: Official Test Credentials
+
+To fully test the live production database and AI scoring engine, please use the following official mock credentials. **These accounts are seeded with rich telemetry data** to demonstrate the platform's capabilities.
+
+| Role | Email | Password | Landing View |
+| :--- | :--- | :--- | :--- |
+| **Student** | `student@university.edu` | `mindflow2026` | Personal Dashboard & Check-In |
+| **Counselor** | `counselor@university.edu` | `mindflow2026` | Campus-wide WellPulse Analytics |
+
+> [!TIP]
+> **Testing Flow:**
+> 1. Log in as the **Student** to view individual stress tracking and submit a daily check-in.
+> 2. Log in as the **Counselor** to see how the student's data aggregates across the campus mesh (50+ active mock nodes).
+
+---
+
 ## 📸 System Screenshots
 
 ### 1. Student Onboarding & Profile Configuration

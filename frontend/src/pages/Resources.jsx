@@ -52,7 +52,7 @@ export default function Resources() {
       <Sidebar active="resources" />
       <Header title="Resource Nexus" subtext="SYNC_STATE: OPTIMAL" searchPlaceholder="Search resources, exercises, media..." onSearch={setSearch} />
 
-      <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
+      <main className="pt-28 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
         <div className="max-w-7xl mx-auto space-y-8">
           
           <div className="flex items-end justify-between">

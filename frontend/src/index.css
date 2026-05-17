@@ -56,6 +56,48 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ─── Mobile Safe Area ───────────────────────────────────────── */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide custom cursor on touch/pointer:coarse devices */
+@media (pointer: coarse) {
+  body, a, button, select, input, [role="button"], textarea {
+    cursor: auto !important;
+  }
+  .custom-cursor,
+  .custom-cursor-follower {
+    display: none !important;
+  }
+}
+
+/* ─── Responsive Mobile Content Padding ─────────────────────── */
+/* Ensures content isn't hidden behind the mobile bottom nav */
+@media (max-width: 767px) {
+  .main-with-sidebar {
+    padding-bottom: 96px !important;
+  }
+  /* Reduce oversized section padding on mobile */
+  .landing-section-padding {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  /* Scale down large bento card internal padding */
+  .bento-card-padding {
+    padding: 2rem !important;
+  }
+  /* Ensure no-scrollbar utility for horizontal scroll */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+
 /* ─── Custom Scrollbar ──────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;

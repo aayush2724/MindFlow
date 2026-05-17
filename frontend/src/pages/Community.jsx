@@ -162,7 +162,7 @@ export default function Community() {
       <Sidebar active="community" />
       <Header title="Neural Network Feed" subtext="Share thoughts anonymously and connect in cluster chats" />
 
-      <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
+      <main className="pt-28 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
         <div className="max-w-7xl mx-auto space-y-8">
           
           <div className="flex items-end justify-between">

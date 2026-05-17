@@ -12,6 +12,7 @@ export default function Landing() {
 
 
   const [showAlert, setShowAlert] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const handleCtaSubmit = (e) => {
     e.preventDefault();
@@ -75,7 +76,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div style={{ background: 'transparent', color: '#e5e2e3', cursor: 'none', overflowX: 'hidden', fontFamily: 'Space Grotesk, sans-serif' }}>
+    <div style={{ background: 'transparent', color: '#e5e2e3', overflowX: 'hidden', fontFamily: 'Space Grotesk, sans-serif' }}>
       {/* Custom cursor */}
       <div className="custom-cursor" />
       <div className="custom-cursor-follower" />
@@ -83,40 +84,84 @@ export default function Landing() {
 
 
       {/* Nav */}
-      <nav id="main-nav" className="fixed top-0 w-full z-50 flex justify-between items-center px-10 py-6 transition-all duration-500 backdrop-blur-xl bg-[#030305]/20 border-b border-white/5">
+      <nav id="main-nav" className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-10 py-5 md:py-6 transition-all duration-500 backdrop-blur-xl bg-[#030305]/20 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 28, letterSpacing: '-0.04em', color: '#e1fdff' }}>MINDFLOW</span>
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full border" style={{ background: 'rgba(255,68,68,0.08)', borderColor: 'rgba(255,68,68,0.25)' }}>
+          <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 26, letterSpacing: '-0.04em', color: '#e1fdff' }}>MINDFLOW</span>
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full border" style={{ background: 'rgba(255,68,68,0.08)', borderColor: 'rgba(255,68,68,0.25)' }}>
             <span className="live-dot" />
             <span className="text-[9px] terminal-text font-bold tracking-widest" style={{ color: '#ff6666' }}>LIVE</span>
           </div>
         </div>
+        {/* Desktop links */}
         <div className="hidden md:flex items-center gap-12">
           {['DASHBOARD', 'RESOURCES', 'COMMUNITY'].map((l, i) => {
             const dest = i === 0 ? '/dashboard' : (i === 1 ? '/resources' : '/community');
             return (
-              <motion.div
-                key={l}
-                whileHover={{ scale: 1.15, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative"
-              >
+              <motion.div key={l} whileHover={{ scale: 1.15, y: -2 }} whileTap={{ scale: 0.95 }} className="relative">
                 <Link to={dest} className="text-[11px] font-semibold tracking-[0.3em] transition-colors duration-300"
                   style={{ color: i === 0 ? '#e1fdff' : '#b9cacb' }}>{l}</Link>
               </motion.div>
             );
           })}
         </div>
-        <Link to="/auth">
-          <button className="px-8 py-3 rounded-full font-bold text-xs tracking-[0.2em] transition-all hover:scale-105"
-            style={{ background: '#e1fdff', color: '#003548' }}>
-            GET STARTED
+        <div className="flex items-center gap-3">
+          {/* Desktop CTA */}
+          <Link to="/auth" className="hidden md:block">
+            <button className="px-8 py-3 rounded-full font-bold text-xs tracking-[0.2em] transition-all hover:scale-105"
+              style={{ background: '#e1fdff', color: '#003548' }}>
+              GET STARTED
+            </button>
+          </Link>
+          {/* Hamburger — mobile only */}
+          <button
+            className="md:hidden flex flex-col items-center justify-center w-10 h-10 gap-[5px] cursor-pointer z-[60]"
+            onClick={() => setMobileNavOpen(prev => !prev)}
+            aria-label="Toggle navigation menu"
+          >
+            <span className={`block h-0.5 w-6 rounded-full transition-all duration-300 origin-center ${ mobileNavOpen ? 'rotate-45 translate-y-[7px]' : '' }`} style={{ background: '#e1fdff' }} />
+            <span className={`block h-0.5 w-6 rounded-full transition-all duration-300 ${ mobileNavOpen ? 'opacity-0 scale-x-0' : '' }`} style={{ background: '#e1fdff' }} />
+            <span className={`block h-0.5 w-6 rounded-full transition-all duration-300 origin-center ${ mobileNavOpen ? '-rotate-45 -translate-y-[7px]' : '' }`} style={{ background: '#e1fdff' }} />
           </button>
-        </Link>
+        </div>
       </nav>
 
+      {/* Mobile Nav Drawer */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed top-[65px] left-0 right-0 z-[49] md:hidden"
+            style={{ background: 'rgba(3,3,5,0.98)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <div className="flex flex-col py-2">
+              {['DASHBOARD', 'RESOURCES', 'COMMUNITY'].map((l, i) => {
+                const dest = i === 0 ? '/dashboard' : (i === 1 ? '/resources' : '/community');
+                return (
+                  <Link key={l} to={dest} onClick={() => setMobileNavOpen(false)}
+                    className="px-6 py-4 text-sm font-semibold tracking-[0.25em] border-b border-white/5 transition-colors hover:text-[#e1fdff]"
+                    style={{ color: '#b9cacb' }}>
+                    {l}
+                  </Link>
+                );
+              })}
+              <div className="px-6 py-4">
+                <Link to="/auth" onClick={() => setMobileNavOpen(false)}>
+                  <button className="w-full py-3 rounded-full font-bold text-xs tracking-[0.2em] transition-all"
+                    style={{ background: '#e1fdff', color: '#003548' }}>
+                    GET STARTED
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero */}
-      <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center text-center px-10 overflow-hidden z-10">
+      <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center text-center px-4 md:px-10 overflow-hidden z-10">
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           {/* Neural particle network — reacts to mouse */}
           <NeuralCanvas style={{ opacity: 0.38 }} />
@@ -160,12 +205,12 @@ export default function Landing() {
       </section>
 
       {/* Bento Grid */}
-      <section className="sticky top-0 min-h-screen py-20 px-10 border-t z-20 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+      <section className="sticky top-0 min-h-screen py-16 md:py-20 px-4 md:px-10 border-t z-20 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
         style={{ background: 'rgba(3,3,5,0.4)', backdropFilter: 'blur(24px)', borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
             {/* MoodMap */}
-            <div className="md:col-span-7 glass-panel reveal-on-scroll rounded-[3rem] p-16 overflow-hidden relative group">
+            <div className="md:col-span-7 glass-panel reveal-on-scroll rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none transition-all duration-700"
                 style={{ background: 'rgba(0,219,231,0.05)', filter: 'blur(100px)' }} />
               <div className="flex flex-col h-full justify-between gap-16">
@@ -191,7 +236,7 @@ export default function Landing() {
             </div>
             {/* Right cards */}
             <div className="md:col-span-5 flex flex-col gap-12">
-              <div className="glass-panel reveal-on-scroll rounded-[3rem] p-12 flex flex-col items-center justify-center text-center gap-8 flex-grow"
+              <div className="glass-panel reveal-on-scroll rounded-[2rem] md:rounded-[3rem] p-8 md:p-12 flex flex-col items-center justify-center text-center gap-8 flex-grow"
                 style={{ transitionDelay: '100ms' }}>
                 <div className="w-24 h-24 rounded-full flex items-center justify-center border" style={{ background: 'rgba(182,0,248,0.1)', borderColor: 'rgba(182,0,248,0.2)' }}>
                   <span className="material-symbols-outlined text-5xl" style={{ color: '#ebb2ff' }}>query_stats</span>
@@ -201,7 +246,7 @@ export default function Landing() {
                   <p className="font-light px-6" style={{ color: '#b9cacb' }}>Instant feedback on cognitive load and emotional trajectory.</p>
                 </div>
               </div>
-              <div className="glass-panel reveal-on-scroll rounded-[3rem] p-12 flex flex-col gap-8 relative overflow-hidden"
+              <div className="glass-panel reveal-on-scroll rounded-[2rem] md:rounded-[3rem] p-8 md:p-12 flex flex-col gap-8 relative overflow-hidden"
                 style={{ transitionDelay: '200ms', borderColor: 'rgba(0,219,231,0.1)' }}>
                 <span className="text-[11px] font-semibold tracking-[0.3em]" style={{ color: '#D2FF00' }}>MODULE 02</span>
                 <h3 className="text-2xl font-bold" style={{ color: '#e1fdff', fontFamily: 'Space Grotesk' }}>CALMCAL</h3>
@@ -209,7 +254,7 @@ export default function Landing() {
               </div>
             </div>
             {/* WellPulse */}
-            <div className="md:col-span-12 glass-panel reveal-on-scroll rounded-[3rem] p-16 overflow-hidden relative" style={{ transitionDelay: '150ms' }}>
+            <div className="md:col-span-12 glass-panel reveal-on-scroll rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 overflow-hidden relative" style={{ transitionDelay: '150ms' }}>
               <div className="flex flex-col md:flex-row gap-20 items-center">
                 <div className="flex-1 space-y-10">
                   <span className="text-[11px] font-semibold tracking-[0.3em]" style={{ color: '#D2FF00' }}>MODULE 03</span>
@@ -238,7 +283,7 @@ export default function Landing() {
       </section>
 
       {/* Intelligence Core */}
-      <section className="sticky top-0 min-h-screen py-20 px-10 border-t z-30 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+      <section className="sticky top-0 min-h-screen py-16 md:py-20 px-4 md:px-10 border-t z-30 flex items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
         style={{ background: 'rgba(3,3,5,0.6)', backdropFilter: 'blur(24px)', borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide space-y-16">
           <div className="text-center reveal-on-scroll">
@@ -279,7 +324,7 @@ export default function Landing() {
       </section>
 
       {/* Platform Stats */}
-      <section className="sticky top-0 py-28 px-10 border-t z-[35] shadow-[0_-20px_50px_rgba(0,0,0,0.85)]"
+      <section className="sticky top-0 py-16 md:py-28 px-4 md:px-10 border-t z-[35] shadow-[0_-20px_50px_rgba(0,0,0,0.85)]"
         style={{ background: 'rgba(3,3,5,0.75)', backdropFilter: 'blur(28px)', borderColor: 'rgba(255,255,255,0.07)' }}>
         <div className="ultra-wide">
           <p className="text-center text-[10px] tracking-[0.6em] terminal-text font-bold mb-16 uppercase" style={{ color: '#00DBE7' }}>
@@ -314,14 +359,14 @@ export default function Landing() {
 
 
       {/* CTA */}
-      <section className="sticky top-0 min-h-screen py-40 px-10 text-center border-t z-40 flex items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+      <section className="sticky top-0 min-h-screen py-20 md:py-40 px-4 md:px-10 text-center border-t z-40 flex items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
         style={{ background: 'transparent', borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide relative z-10 space-y-16 reveal-on-scroll">
           <h2 className="font-bold tracking-tighter" style={{ fontFamily: 'Space Grotesk', fontSize: 'clamp(40px,6vw,80px)', color: '#e1fdff' }}>
             READY FOR<br />FLOW STATE?
           </h2>
           <form onSubmit={handleCtaSubmit} className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-            <input className="rounded-full px-10 py-6 w-full outline-none terminal-text text-xs tracking-widest bg-white/[0.03]"
+            <input className="rounded-full px-6 md:px-10 py-4 md:py-6 w-full outline-none terminal-text text-xs tracking-widest bg-white/[0.03]"
               style={{ border: '1px solid rgba(255,255,255,0.08)', color: '#e5e2e3' }}
               placeholder="ENTER INSTITUTION EMAIL" type="email" value={ctaEmail} onChange={e => setCtaEmail(e.target.value)} required />
             <button type="submit" className="px-12 py-6 rounded-full font-bold tracking-[0.2em] text-xs whitespace-nowrap transition-all hover:shadow-[0_0_40px_rgba(210,255,0,0.4)] cursor-pointer"
@@ -333,7 +378,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="sticky top-0 w-full py-20 px-10 border-t z-50 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
+      <footer className="sticky top-0 w-full py-12 md:py-20 px-4 md:px-10 border-t z-50 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
         style={{ background: 'rgba(3,3,5,0.8)', borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="ultra-wide grid grid-cols-1 md:grid-cols-3 gap-16 items-start">
           <div className="flex flex-col gap-6">
@@ -399,7 +444,7 @@ export default function Landing() {
 
       {/* FAB */}
       <Link to="/checkin">
-        <button className="fixed bottom-12 right-12 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50"
+        <button className="fixed bottom-6 right-4 md:bottom-12 md:right-12 w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50"
           style={{ background: '#e1fdff', color: '#003548' }}>
           <span className="material-symbols-outlined font-bold">bolt</span>
         </button>
@@ -409,7 +454,7 @@ export default function Landing() {
 
       <style>{`
         @keyframes heroReveal { to { opacity:1; transform:translateY(0); } }
-        body { cursor: none; }
+        @media (pointer: fine) { body { cursor: none; } }
       `}</style>
     </div>
   );

@@ -310,7 +310,7 @@ export default function WellPulse() {
       <Header title="WellPulse Dashboard" subtext="Overview of student wellness and academic cognitive levels" searchPlaceholder="SEARCH_STUDENTS..." />
 
       {/* Main Container */}
-      <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
+      <main className="pt-24 pb-24 md:pb-12 px-6 md:ml-64 relative z-20 main-with-sidebar">
         <div className="max-w-7xl mx-auto">
 
           {/* Section 1: Header + KPIs */}
@@ -327,7 +327,7 @@ export default function WellPulse() {
                   Aggregate mental equilibrium telemetry. Monitoring <span className="terminal-text" style={{ color: '#e1fdff' }}>{stats.totalStudents.toLocaleString()}</span> active student nodes.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2 md:gap-3">
                 <button 
                   onClick={handleExportData}
                   className="border rounded-lg px-4 py-2 font-bold flex items-center gap-2 terminal-text text-[10px] transition-all hover:opacity-80 cursor-pointer"
@@ -353,7 +353,7 @@ export default function WellPulse() {
             </header>
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {kpis.map((kpi, i) => (
                 <div key={i} className="rounded-2xl p-5 flex flex-col gap-2 border transition-all hover:border-[rgba(0,219,231,0.4)]"
                   style={{ background: 'rgba(10,10,11,0.6)', backdropFilter: 'blur(32px)', borderColor: 'rgba(255,255,255,0.08)' }}>
@@ -377,7 +377,7 @@ export default function WellPulse() {
             
             {/* Mesh Map */}
             <section 
-              className="lg:col-span-2 rounded-3xl overflow-hidden flex flex-col h-[400px] border transition-all hover:border-[rgba(0,219,231,0.4)]"
+              className="lg:col-span-2 rounded-3xl overflow-hidden flex flex-col h-auto md:h-[400px] border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background: 'rgba(10,10,11,0.4)', backdropFilter: 'blur(40px)', borderColor: 'rgba(0,242,255,0.15)' }}
             >
               <div className="p-6 flex justify-between items-center">
@@ -453,7 +453,7 @@ export default function WellPulse() {
 
             {/* Alerts Feed */}
             <section 
-              className="rounded-3xl p-6 flex flex-col h-[400px] border transition-all hover:border-[rgba(0,219,231,0.4)]"
+              className="rounded-3xl p-6 flex flex-col h-auto md:h-[400px] border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background: 'rgba(10,10,11,0.4)', backdropFilter: 'blur(40px)', borderColor: 'rgba(0,242,255,0.15)' }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -539,7 +539,7 @@ export default function WellPulse() {
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.5, delay: 0.2 }} 
-              className="rounded-3xl p-6 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)] flex flex-col h-[400px]"
+              className="rounded-3xl p-6 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)] flex flex-col h-auto md:h-[400px]"
               style={{ background: 'rgba(10,10,11,0.4)', backdropFilter: 'blur(40px)', borderColor: 'rgba(0,242,255,0.15)' }}
             >
               <div className="flex justify-between items-center mb-6">
@@ -603,7 +603,7 @@ export default function WellPulse() {
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.5, delay: 0.3 }} 
-              className="rounded-3xl p-6 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)] flex flex-col h-[400px]"
+              className="rounded-3xl p-6 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)] flex flex-col h-auto md:h-[400px]"
               style={{ background: 'rgba(10,10,11,0.4)', backdropFilter: 'blur(40px)', borderColor: 'rgba(0,242,255,0.15)' }}
             >
               <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>

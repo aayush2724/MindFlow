@@ -347,10 +347,10 @@ export default function CalmCal() {
       <Header title="CalmCal Scheduler" subtext="Time management, stress tracking, and recovery cycles" />
 
       {/* Main Canvas */}
-      <main className="md:pl-64 pt-24 min-h-screen">
+      <main className="md:pl-64 pt-24 pb-24 md:pb-0 min-h-screen main-with-sidebar">
         <div className="px-6 py-8 max-w-7xl mx-auto relative z-10">
           {/* Header */}
-          <header className="flex flex-col md:flex-row justify-between items-end gap-6 pb-12">
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-8 md:pb-12">
             <div className="space-y-2">
               <h1 className="font-bold" style={{ fontFamily:'Space Grotesk', fontSize:'clamp(40px,5vw,64px)', color:'#e1fdff' }}>CalmCal</h1>
               <p className="text-lg font-light max-w-xl" style={{ color:'#b9cacb' }}>Your schedule, harmonized with your mental state. Predictive burnout mapping powered by the Neural Engine.</p>
@@ -716,7 +716,7 @@ export default function CalmCal() {
             animate={{ opacity: 1, y: 0, scale: 1 }} 
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             style={{ 
-              position: 'fixed', bottom: 32, right: 32, zIndex: 1000, 
+              position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', right: 16, zIndex: 1000, 
               background: 'rgba(14, 14, 15, 0.95)', backdropFilter: 'blur(20px)',
               border: toast.type === 'success' ? '1px solid rgba(0, 219, 231, 0.3)' : toast.type === 'error' ? '1px solid rgba(255, 180, 171, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
               boxShadow: toast.type === 'success' ? '0 10px 30px rgba(0, 219, 231, 0.2)' : toast.type === 'error' ? '0 10px 30px rgba(255, 180, 171, 0.2)' : '0 10px 30px rgba(255, 255, 255, 0.05)',

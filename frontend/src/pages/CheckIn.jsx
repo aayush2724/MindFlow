@@ -91,8 +91,8 @@ export default function CheckIn() {
       <Sidebar active="checkin" />
       <Header title="Mood Check-In" subtext="Take a moment to tune in and log your current state" />
 
-      <div style={{ paddingLeft: '256px', paddingTop: 120, paddingBottom: 60, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 560, padding: '0 24px', position: 'relative', zIndex: 1 }}>
+      <div className="md:ml-64 pt-[120px] pb-24 md:pb-[60px] flex items-start justify-center min-h-screen main-with-sidebar">
+        <div className="w-full max-w-[560px] px-4 md:px-6 relative z-10">
         <AnimatePresence mode="wait">
 
           {/* ── Check-In Form ── */}

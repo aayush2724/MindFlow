@@ -16,7 +16,6 @@ const studentLinks = [
 
 const counselorLinks = [
   { to: '/wellpulse', icon: BarChart3, label: 'WellPulse' },
-  { to: '/dashboard', icon: ShieldCheck, label: 'Overview' },
 ];
 
 export default function Nav() {

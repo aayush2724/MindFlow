@@ -10,8 +10,6 @@ const NAV_STUDENT = [
 
 const NAV_COUNSELOR = [
   { icon: 'monitor_heart', label: 'WellPulse',   to: '/wellpulse' },
-  { icon: 'notifications', label: 'Alerts',       to: '/alerts' },
-  { icon: 'analytics',     label: 'Departments',  to: '/departments' },
 ];
 
 export default function Sidebar({ active }) {

@@ -291,7 +291,7 @@ export default function WellPulse() {
       {/* Mobile Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full px-6 py-3 flex justify-around items-center z-50 border-t"
         style={{ background:'rgba(19,19,20,0.8)', backdropFilter:'blur(24px)', borderColor:'rgba(255,255,255,0.08)' }}>
-        {[['grid_view','DASH','/wellpulse'],['analytics','MAP','#'],['notifications','LOGS','#']].map(([icon,label,to]) => (
+        {[['grid_view','DASH','/wellpulse']].map(([icon,label,to]) => (
           <Link key={label} to={to} className="flex flex-col items-center gap-1" style={{ color: label==='DASH' ? '#e1fdff' : '#b9cacb' }}>
             <span className="material-symbols-outlined" style={{ fontVariationSettings: label==='DASH' ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
             <span className="text-[9px] terminal-text font-bold">{label}</span>

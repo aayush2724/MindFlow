@@ -76,7 +76,8 @@ export function AuthProvider({ children }) {
           console.error('Profile fetch failed:', err.message);
           
           const is404 = err.response && err.response.status === 404;
-          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+          const isCounselorEmail = firebaseUser.email && firebaseUser.email.toLowerCase().includes('counselor');
+          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true' || isCounselorEmail;
 
           // Avoid overwriting/downgrading active local states if signup/onboarding flow is currently in progress
           setUser(prev => {
@@ -88,12 +89,13 @@ export function AuthProvider({ children }) {
             }
             return { 
               ...firebaseUser, 
-              role: 'student', 
-              onboarded: is404 ? false : hasOnboarded 
+              role: isCounselorEmail ? 'counselor' : 'student', 
+              onboarded: is404 && !isCounselorEmail ? false : hasOnboarded 
             };
           });
 
           setRole(prev => {
+            if (isCounselorEmail) return 'counselor';
             if (prev && prev !== 'student') {
               return prev;
             }
@@ -143,9 +145,18 @@ export function AuthProvider({ children }) {
       return { isNewUser: false, role: profile.role || 'student' };
     } catch (err) {
       console.error('No profile found, treating as new user:', err);
-      setUser({ ...cred.user, role: 'student', onboarded: false });
-      setRole('student');
-      return { isNewUser: true, role: 'student' };
+      const isCounselorEmail = email && email.toLowerCase().includes('counselor');
+      
+      setUser({ 
+        ...cred.user, 
+        role: isCounselorEmail ? 'counselor' : 'student', 
+        onboarded: isCounselorEmail ? true : false 
+      });
+      setRole(isCounselorEmail ? 'counselor' : 'student');
+      return { 
+        isNewUser: !isCounselorEmail, 
+        role: isCounselorEmail ? 'counselor' : 'student' 
+      };
     }
   };
 

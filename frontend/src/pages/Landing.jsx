@@ -11,7 +11,6 @@ export default function Landing() {
   const [activeCore, setActiveCore] = useState(null);
 
 
-  const [showAlert, setShowAlert] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const handleCtaSubmit = (e) => {
@@ -22,16 +21,6 @@ export default function Landing() {
   };
 
 
-  // Floating demo alert — shows automatically to wow hackathon judges
-  useEffect(() => {
-    const show1 = setTimeout(() => setShowAlert(true), 2500);
-    const hide1 = setTimeout(() => setShowAlert(false), 8500);
-    const interval = setInterval(() => {
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 6000);
-    }, 16000);
-    return () => { clearTimeout(show1); clearTimeout(hide1); clearInterval(interval); };
-  }, []);
 
   useEffect(() => {
     // Custom cursor
@@ -323,39 +312,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Platform Stats */}
-      <section className="sticky top-0 py-16 md:py-28 px-4 md:px-10 border-t z-[35] shadow-[0_-20px_50px_rgba(0,0,0,0.85)]"
-        style={{ background: 'rgba(3,3,5,0.75)', backdropFilter: 'blur(28px)', borderColor: 'rgba(255,255,255,0.07)' }}>
-        <div className="ultra-wide">
-          <p className="text-center text-[10px] tracking-[0.6em] terminal-text font-bold mb-16 uppercase" style={{ color: '#00DBE7' }}>
-            PLATFORM METRICS · LIVE TELEMETRY
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 reveal-on-scroll">
-            {[
-              { num: '12,847+', label: 'Students Protected', color: '#00DBE7', glow: 'rgba(0,219,231,0.35)' },
-              { num: '94.2%', label: 'Prediction Accuracy', color: '#D2FF00', glow: 'rgba(210,255,0,0.35)' },
-              { num: '200+', label: 'Institutions Active', color: '#e1fdff', glow: 'rgba(225,253,255,0.2)' },
-              { num: '3.2M', label: 'Check-ins Analyzed', color: '#c084fc', glow: 'rgba(192,132,252,0.35)' },
-            ].map((s, i) => (
-              <div key={i} className="text-center group" style={{ animationDelay: `${i * 120}ms` }}>
-                <div className="font-bold mb-3 transition-all duration-700 group-hover:scale-105"
-                  style={{
-                    fontFamily: 'Space Grotesk',
-                    fontSize: 'clamp(38px,5vw,68px)',
-                    color: s.color,
-                    letterSpacing: '-0.04em',
-                    textShadow: `0 0 40px ${s.glow}`,
-                  }}>
-                  {s.num}
-                </div>
-                <div className="text-[11px] tracking-[0.35em] terminal-text font-semibold uppercase" style={{ color: 'rgba(185,202,203,0.55)' }}>
-                  {s.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
 
       {/* CTA */}
@@ -400,46 +356,6 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* Demo Alert Toast — auto-appears to showcase live monitoring capability */}
-      <AnimatePresence>
-        {showAlert && (
-          <motion.div
-            initial={{ x: '130%', opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '130%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 280 }}
-            className="fixed bottom-32 right-6 z-[200] max-w-[290px] cursor-pointer"
-            onClick={() => navigate('/auth')}
-            style={{
-              background: 'rgba(9,9,11,0.97)',
-              border: '1px solid rgba(255,180,171,0.25)',
-              borderRadius: 20,
-              padding: '18px 20px',
-              backdropFilter: 'blur(28px)',
-              boxShadow: '0 24px 70px rgba(0,0,0,0.65), 0 0 50px rgba(255,80,80,0.07)',
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(255,180,171,0.12)', border: '1px solid rgba(255,180,171,0.3)' }}>
-                <div className="w-2 h-2 rounded-full bg-[#ffb4ab]" style={{ animation: 'livePulse 1s ease-in-out infinite' }} />
-              </div>
-              <div>
-                <p className="text-[9px] terminal-text font-bold tracking-widest uppercase mb-1.5" style={{ color: '#ffb4ab' }}>
-                  BURNOUT ALERT · LIVE
-                </p>
-                <p className="text-xs leading-relaxed mb-2.5" style={{ color: '#e5e2e3' }}>
-                  High risk detected in CS cluster — 3 students flagged for counselor review.
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#D2FF00] animate-pulse" />
-                  <p className="text-[9px] terminal-text font-semibold" style={{ color: '#D2FF00' }}>AI INTERVENTION QUEUED</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
 
       {/* FAB */}

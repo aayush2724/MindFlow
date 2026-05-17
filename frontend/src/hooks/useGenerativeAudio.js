@@ -115,6 +115,8 @@ export function useGenerativeAudio() {
     if (nodesRef.current.length > 0) {
       const mainGain = nodesRef.current[nodesRef.current.length - 1];
       const ctx = ctxRef.current;
+      const nodesToStop = nodesRef.current;
+      nodesRef.current = []; // Clear immediately so remounts aren't affected
       
       try {
         // Fade out smoothly over 2 seconds
@@ -123,15 +125,19 @@ export function useGenerativeAudio() {
         mainGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
 
         setTimeout(() => {
-          nodesRef.current.forEach(node => {
+          nodesToStop.forEach(node => {
             if (node.stop) try { node.stop(); } catch(e){}
             if (node.disconnect) node.disconnect();
           });
-          nodesRef.current = [];
-          setIsPlaying(false);
+          // Only update state if a new session hasn't started
+          if (nodesRef.current.length === 0) {
+            setIsPlaying(false);
+          }
         }, 2100);
       } catch(err) {
-        setIsPlaying(false);
+        if (nodesRef.current.length === 0) {
+          setIsPlaying(false);
+        }
       }
     }
   };

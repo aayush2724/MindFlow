@@ -7,6 +7,10 @@ const MOUSE_ATTRACT  = 180;
 export default function NeuralCanvas({ style = {} }) {
   const canvasRef = useRef(null);
 
+  // Don't render particle canvas on mobile/touch screens to eliminate rendering lag on phones
+  const isMobile = typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768);
+  if (isMobile) return null;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

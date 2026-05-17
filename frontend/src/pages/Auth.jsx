@@ -120,27 +120,6 @@ export default function Auth() {
     }
   };
 
-  const handleDemoLogin = async (role) => {
-    setLoading(true);
-    setError('');
-    const demoEmail = role === 'student' ? 'student@university.edu' : 'counselor@university.edu';
-    const demoPassword = 'mindflow2026';
-    
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    
-    try {
-      const res = await login(demoEmail, demoPassword);
-      const isNew = res?.isNewUser;
-      const userRole = res?.role || role;
-      navigate(isNew ? '/onboarding' : (userRole === 'counselor' ? '/wellpulse' : '/dashboard'));
-    } catch (err) {
-      setError(err.message || 'Demo login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 pt-24 z-10">
       {/* Animated floating orbs — premium depth behind the card */}
@@ -267,35 +246,6 @@ export default function Auth() {
               )}
             </button>
           </form>
-
-          {tab === 'signin' && (
-            <div className="mb-6 p-4 rounded-xl border border-[#00DBE7]/20 bg-[#00DBE7]/5 relative z-10">
-              <div className="text-[10px] uppercase font-bold tracking-widest text-[#00DBE7] mb-3 font-mono flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-xs">terminal</span>
-                Judge Demo Access (1-Click)
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('student')}
-                  disabled={loading}
-                  className="flex-1 py-2.5 px-3 rounded-lg text-[10px] font-bold tracking-wider uppercase border border-[#00DBE7]/30 hover:bg-[#00DBE7]/10 text-[#e1fdff] transition-all flex items-center justify-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-[14px]">school</span>
-                  Student Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('counselor')}
-                  disabled={loading}
-                  className="flex-1 py-2.5 px-3 rounded-lg text-[10px] font-bold tracking-wider uppercase border border-[#c084fc]/30 hover:bg-[#c084fc]/10 text-[#e1fdff] transition-all flex items-center justify-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-[14px]">support_agent</span>
-                  Counselor Demo
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="flex items-center gap-4 mb-8 relative z-10">
             <div className="flex-1 h-px bg-white/10" />

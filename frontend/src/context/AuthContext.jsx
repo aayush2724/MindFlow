@@ -129,8 +129,10 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     if (DEMO_MODE) {
-      signInDemo(email.includes('counselor'));
-      return;
+      const isCounselor = email.includes('counselor');
+      signInDemo(isCounselor);
+      const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+      return { isNewUser: !isCounselor && !hasOnboarded, role: isCounselor ? 'counselor' : 'student' };
     }
     const cred = await signInWithEmailAndPassword(auth, email, password);
     try {
@@ -141,12 +143,12 @@ export function AuthProvider({ children }) {
       }
       setUser({ ...cred.user, ...profile, onboarded: profile.role === 'counselor' ? true : hasOnboarded });
       setRole(profile.role || 'student');
-      return { isNewUser: !hasOnboarded };
+      return { isNewUser: !hasOnboarded, role: profile.role || 'student' };
     } catch (err) {
       const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
       setUser({ ...cred.user, role: 'student', onboarded: hasOnboarded });
       setRole('student');
-      return { isNewUser: !hasOnboarded };
+      return { isNewUser: !hasOnboarded, role: 'student' };
     }
   };
 

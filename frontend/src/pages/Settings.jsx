@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -13,6 +13,7 @@ export default function AccountSettings() {
   const [isEditing, setIsEditing] = useState(false);
   const [avatar, setAvatar] = useState(user?.photoURL || null);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' | 'info' }
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
     email: user?.email || '',
@@ -33,6 +34,7 @@ export default function AccountSettings() {
 
   const handleSave = async () => {
     try {
+      setToast({ message: 'SYNCHRONIZING_PROFILE...', type: 'info' });
       let finalPhotoURL = avatar;
 
       if (!DEMO_MODE && avatarFile) {
@@ -47,19 +49,26 @@ export default function AccountSettings() {
         semester: formData.semester
       });
       setIsEditing(false);
-      alert('Profile updated successfully!');
+      setToast({ message: 'Profile protocol sync completed successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3500);
     } catch (error) {
       console.error('Failed to update profile', error);
-      alert('Failed to update profile.');
+      setToast({ message: 'Neural link unstable: Failed to update profile.', type: 'error' });
+      setTimeout(() => setToast(null), 3500);
     }
   };
 
   const handleRemovePhoto = async () => {
     setAvatar(null);
+    setAvatarFile(null);
     try {
       await updateUserProfile({ photoURL: '' });
+      setToast({ message: 'Profile telemetry photo purged.', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
     } catch (error) {
       console.error('Failed to remove photo', error);
+      setToast({ message: 'Failed to clear photo.', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -203,6 +212,28 @@ export default function AccountSettings() {
           </motion.div>
         </div>
       </main>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }} 
+            animate={{ opacity: 1, y: 0, scale: 1 }} 
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            style={{ 
+              position: 'fixed', bottom: 32, right: 32, zIndex: 1000, 
+              background: 'rgba(14, 14, 15, 0.95)', backdropFilter: 'blur(20px)',
+              border: toast.type === 'success' ? '1px solid rgba(0, 219, 231, 0.3)' : toast.type === 'error' ? '1px solid rgba(255, 180, 171, 0.3)' : '1px solid rgba(0, 219, 231, 0.1)',
+              boxShadow: toast.type === 'success' ? '0 10px 30px rgba(0, 219, 231, 0.2)' : toast.type === 'error' ? '0 10px 30px rgba(255, 180, 171, 0.2)' : '0 10px 30px rgba(0, 219, 231, 0.05)',
+              borderRadius: '1.25rem', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12
+            }}
+          >
+            <span className="material-symbols-outlined animate-pulse" style={{ color: toast.type === 'success' ? '#00f2ff' : toast.type === 'error' ? '#ffb4ab' : '#00f2ff' }}>
+              {toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'warning' : 'sync'}
+            </span>
+            <span className="text-xs font-bold terminal-text" style={{ color: '#e5e2e3' }}>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

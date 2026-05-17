@@ -301,12 +301,15 @@ export default function Support() {
                   borderColor: 'rgba(255,255,255,0.1)'
                 }}
               >
-                <h4 className="font-semibold text-lg mb-6" style={{ fontFamily: 'Space Grotesk', color: '#e1fdff' }}>Support Diagnostics</h4>
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="font-semibold text-lg" style={{ fontFamily: 'Space Grotesk', color: '#e1fdff' }}>Support Diagnostics</h4>
+                  <span className="text-[8px] tracking-widest text-[#D2FF00]/60 terminal-text font-bold uppercase border border-[#D2FF00]/20 px-1.5 py-0.5 rounded bg-[#D2FF00]/5">DEMO</span>
+                </div>
                 <div className="space-y-4">
                   {[
-                    { label: 'Admin Status', val: 'Online', color: '#00f2ff' },
-                    { label: 'Avg Sync Latency', val: '14.2ms', color: '#D2FF00' },
-                    { label: 'Active Support Agents', val: '3 Nodes', color: '#e1fdff' }
+                    { label: 'Sync Status', val: 'CLINICAL DEMO', color: '#D2FF00' },
+                    { label: 'Avg Latency (Simulated)', val: '14.2ms', color: '#00f2ff' },
+                    { label: 'Active Agents (Simulated)', val: '3 Nodes', color: '#e1fdff' }
                   ].map((stat, idx) => (
                     <div key={idx} className="flex justify-between items-center text-xs terminal-text pb-2 border-b border-white/5">
                       <span style={{ color: '#b9cacb' }}>{stat.label}</span>

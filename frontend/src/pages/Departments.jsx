@@ -16,6 +16,7 @@ export default function Departments() {
   const [stats, setStats] = useState({ campusAverageBurnout: 0, highRiskCount: 0, checkInRate: 0, totalStudents: 0 });
   const [selectedDept, setSelectedDept] = useState('');
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -72,7 +73,7 @@ export default function Departments() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="departments" />
-      <Header title="Institution Departments" subtext="Cross-department analytical breakdowns and wellness trends" searchPlaceholder="SEARCH_DEPARTMENTS..." />
+      <Header title="Institution Departments" subtext="Cross-department analytical breakdowns and wellness trends" searchPlaceholder="SEARCH_DEPARTMENTS..." onSearch={setSearch} />
 
       {/* Main */}
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
@@ -119,15 +120,15 @@ export default function Departments() {
           </motion.div>
 
           {/* Section 2: Department Cards Grid */}
-          {departments.length === 0 && !loading ? (
+          {departments.filter(d => d.department?.toLowerCase().includes(search.toLowerCase())).length === 0 && !loading ? (
             <div className="rounded-3xl p-16 border text-center my-12" style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(255,255,255,0.08)' }}>
               <span className="material-symbols-outlined text-4xl mb-4 text-[#ffb4ab]">domain_disabled</span>
               <h3 className="font-semibold text-lg text-white mb-2" style={{ fontFamily: 'Space Grotesk' }}>No Departments Found</h3>
-              <p className="text-sm text-[#b9cacb] max-w-md mx-auto">No departmental analytic telemetry has been logged yet or matches the current filter settings.</p>
+              <p className="text-sm text-[#b9cacb] max-w-md mx-auto">No departmental analytic telemetry has been logged yet or matches the current search settings.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              {departments.map((dept, i) => {
+              {departments.filter(d => d.department?.toLowerCase().includes(search.toLowerCase())).map((dept, i) => {
                 const riskKey = dept.avgBurnoutScore > 75 ? 'critical' : dept.avgBurnoutScore > 60 ? 'high' : dept.avgBurnoutScore > 40 ? 'moderate' : 'low';
                 const risk = RISK_MAP[riskKey];
                 return (
@@ -155,11 +156,11 @@ export default function Departments() {
 
                       <div className="space-y-2">
                         <div className="flex justify-between text-[10px] terminal-text uppercase" style={{ color:'#b9cacb' }}>
-                          <span>CHECK_IN_RATE</span>
-                          <span style={{ color:'#00dbe7' }}>{Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%</span>
+                          <span>HIGH_RISK_RATIO</span>
+                          <span style={{ color:'#ffb4ab' }}>{Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-[rgba(53,52,54,1)] overflow-hidden">
-                          <div className="h-full chart-bar rounded-full" style={{ width:`${Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%`, background:'#00dbe7' }} />
+                          <div className="h-full chart-bar rounded-full" style={{ width:`${Math.round((dept.highRiskCount / (dept.studentCount || 1)) * 100)}%`, background:'#ffb4ab' }} />
                         </div>
                       </div>
                     </div>
@@ -180,14 +181,14 @@ export default function Departments() {
           )}
 
           {/* Section 3: Trend Analysis */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="sticky rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
-            style={{ top:112, zIndex:20, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="rounded-3xl p-6 md:p-8 mb-24 border shadow-[0_-15px_40px_rgba(0,0,0,0.8)]"
+            style={{ zIndex:20, background:'rgba(10,10,11,0.95)', backdropFilter:'blur(32px)', borderColor:'rgba(255,255,255,0.08)' }}>
             <section className="rounded-3xl p-8 relative overflow-hidden border transition-all hover:border-[rgba(0,219,231,0.4)]"
               style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(0,242,255,0.15)' }}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
                   <h3 className="font-semibold text-2xl" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Trend Analysis</h3>
-                  <p className="text-sm terminal-text tracking-tighter" style={{ color:'#b9cacb' }}>HISTORICAL_STRESS_FLOW v4.2</p>
+                  <p className="text-[10px] terminal-text tracking-tighter uppercase" style={{ color:'#D2FF00' }}>HISTORICAL_STRESS_FLOW • SIMULATED (REAL TRENDS IN FUTURE SYNCS)</p>
                 </div>
                 <div className="flex flex-wrap gap-2 rounded-xl p-2 border" style={{ background:'rgba(14,14,15,0.8)', borderColor:'rgba(255,255,255,0.08)' }}>
                   {departments.map((dept) => (

@@ -15,16 +15,21 @@ export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorCount, setErrorCount] = useState(0);
+  const [checkedInToday, setCheckedInToday] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function load() {
       try {
-        const [scoreRes, historyRes, calendarRes] = await Promise.all([
+        const [scoreRes, historyRes, calendarRes, todayCheckinRes] = await Promise.all([
           api.get('/burnout/me', { signal: controller.signal }),
           api.get('/burnout/me/history', { signal: controller.signal }),
-          api.get('/calendar/me', { signal: controller.signal })
+          api.get('/calendar/me', { signal: controller.signal }),
+          api.get('/checkins/me/today', { signal: controller.signal }).catch(err => {
+            console.warn('Failed to fetch today checkin status, falling back:', err);
+            return { data: { checkedIn: false } };
+          })
         ]);
         
         if (scoreRes.data.hasData) {
@@ -43,6 +48,11 @@ export default function Dashboard() {
         })));
 
         setEvents(calendarRes.data);
+        
+        const localCheckinDate = localStorage.getItem('mf_last_checkin_date');
+        const isTodayLocal = localCheckinDate === new Date().toLocaleDateString('en-CA');
+        setCheckedInToday(!!todayCheckinRes?.data?.checkedIn || isTodayLocal);
+
         setErrorCount(0);
       } catch (err) {
         if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
@@ -60,7 +70,7 @@ export default function Dashboard() {
       clearInterval(poll);
       controller.abort();
     };
-  }, [user]);
+  }, [user?.uid]);
 
   // Real-time Academic Load Calculation (Weekly)
   const academicLoad = useMemo(() => {
@@ -204,9 +214,9 @@ export default function Dashboard() {
                 </div>
                 {/* Stats row */}
                 <div className="mt-12 flex gap-12 z-10 w-full justify-center">
-                  {[['STRESS_LEVEL', score < 30 ? 'LOW' : score < 60 ? 'MED' : 'HIGH'],
+                  {[['STRESS_LEVEL', score === null ? '---' : score < 30 ? 'LOW' : score < 60 ? 'MED' : 'HIGH'],
                     ['ACADEMIC_LOAD', academicLoad.label.toUpperCase()],
-                    ['SLEEP_QLTY', `${Math.max(15, Math.round(100 - score * 0.8))}%`]].map(([k,v]) => (
+                    ['SLEEP_QLTY', score === null ? '---' : `${Math.max(15, Math.round(100 - score * 0.8))}%`]].map(([k,v]) => (
                     <div key={k} className="text-center group cursor-default">
                       <p className="text-[10px] terminal-text opacity-60 mb-1" style={{ color:'#b9cacb' }}>{k}</p>
                       <p className="font-semibold text-2xl transition-colors" style={{ fontFamily:'Space Grotesk', color: (v === 'HIGH' || v === 'CRITICAL') ? '#ffb4ab' : '#e1fdff' }}>{v}</p>
@@ -221,20 +231,56 @@ export default function Dashboard() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="glass-panel rounded-[2rem] p-8 hud-border">
                   <div className="flex justify-between items-start mb-6">
                     <h3 className="font-semibold text-xl tracking-wide" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Daily Status</h3>
-                    <span className="material-symbols-outlined animate-pulse" style={{ color:'#D2FF00' }}>bolt</span>
+                    <span className="material-symbols-outlined animate-pulse" style={{ color: checkedInToday ? '#34d399' : '#D2FF00' }}>
+                      {checkedInToday ? 'check_circle' : 'bolt'}
+                    </span>
                   </div>
-                  <p className="text-xs terminal-text opacity-70 tracking-widest mb-8" style={{ color:'#b9cacb' }}>HOW ARE YOU VIBRATING TODAY?</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[['mood','Focused'],['cloud','Drained'],['auto_awesome','Creative'],['self_improvement','Restless']].map(([icon,label]) => (
-                      <Link key={icon} to="/checkin">
-                        <button className="magnetic-btn w-full flex flex-col items-center gap-3 p-6 rounded-2xl border group transition-all"
-                          style={{ background:'rgba(255,255,255,0.05)', borderColor:'rgba(255,255,255,0.05)' }}>
-                          <span className="material-symbols-outlined text-3xl group-hover:text-[#D2FF00] transition-colors" style={{ color:'#e1fdff' }}>{icon}</span>
-                          <span className="text-[10px] terminal-text opacity-80" style={{ color:'#b9cacb' }}>{label}</span>
-                        </button>
-                      </Link>
-                    ))}
-                  </div>
+                  
+                  {checkedInToday ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-all hover:scale-105"
+                           style={{ 
+                             background: 'rgba(52, 211, 153, 0.1)', 
+                             border: '2px solid rgba(52, 211, 153, 0.4)', 
+                             boxShadow: '0 0 25px rgba(52, 211, 153, 0.2)' 
+                           }}>
+                        <span className="material-symbols-outlined text-4xl text-[#34d399]">done_all</span>
+                      </div>
+                      <p className="text-sm font-bold tracking-widest uppercase mb-1" style={{ color: '#34d399', fontFamily: 'Space Grotesk' }}>
+                        Checked in today
+                      </p>
+                      <p className="text-[10px] terminal-text opacity-70 tracking-widest mb-6" style={{ color: '#b9cacb' }}>
+                        COGNITIVE TELEMETRY SECURED
+                      </p>
+                      
+                      <div className="w-full bg-[#000]/30 rounded-2xl p-4 border border-white/5 flex items-center justify-between gap-4">
+                        <div className="text-left">
+                          <p className="text-[9px] terminal-text opacity-50 mb-0.5">CURRENT_INDEX</p>
+                          <p className="text-sm font-semibold" style={{ color: '#e1fdff' }}>Burnout Risk</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold font-mono" style={{ color: score !== null ? (score < 30 ? '#00DBE7' : score < 60 ? '#D2FF00' : '#ffb4ab') : '#e1fdff' }}>
+                            {score !== null ? `${score}%` : '---'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs terminal-text opacity-70 tracking-widest mb-8" style={{ color:'#b9cacb' }}>HOW ARE YOU VIBRATING TODAY?</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[['mood','Focused'],['cloud','Drained'],['auto_awesome','Creative'],['self_improvement','Restless']].map(([icon,label]) => (
+                          <Link key={icon} to="/checkin">
+                            <button className="magnetic-btn w-full flex flex-col items-center gap-3 p-6 rounded-2xl border group transition-all"
+                              style={{ background:'rgba(255,255,255,0.05)', borderColor:'rgba(255,255,255,0.05)' }}>
+                              <span className="material-symbols-outlined text-3xl group-hover:text-[#D2FF00] transition-colors" style={{ color:'#e1fdff' }}>{icon}</span>
+                              <span className="text-[10px] terminal-text opacity-80" style={{ color:'#b9cacb' }}>{label}</span>
+                            </button>
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </motion.div>
 
                 {/* AI Insights */}

@@ -57,7 +57,8 @@ export default function Auth() {
     await new Promise(r => setTimeout(r, 900));
     signInDemo(counselor);
     setLoading(false);
-    navigate(counselor ? '/wellpulse' : '/onboarding');
+    const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+    navigate(counselor ? '/wellpulse' : (hasOnboarded ? '/dashboard' : '/onboarding'));
   };
 
   return (

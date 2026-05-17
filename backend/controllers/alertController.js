@@ -6,6 +6,9 @@ const { db, admin } = require('../utils/firebase');
  */
 const getAllAlerts = async (req, res, next) => {
   try {
+    if (req.user.role !== 'counselor') {
+      return res.status(403).json({ error: 'Access denied: Counselors only' });
+    }
     const snapshot = await db.collection('alerts')
       .where('acknowledged', '==', false)
       .orderBy('timestamp', 'desc')
@@ -37,11 +40,11 @@ const getAllAlerts = async (req, res, next) => {
 };
 
 /**
- * @desc Acknowledge an alert (Counselor only)
- * @route PUT /api/alerts/:alertId/acknowledge
- */
 const acknowledgeAlert = async (req, res, next) => {
   try {
+    if (req.user.role !== 'counselor') {
+      return res.status(403).json({ error: 'Access denied: Counselors only' });
+    }
     const { alertId } = req.params;
     const counselorUid = req.user.uid;
 

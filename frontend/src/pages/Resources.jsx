@@ -13,16 +13,17 @@ const MOCK_RESOURCES = [
   { id: 3, type: 'exercise', title: 'Box Breathing Routine', duration: '3 min exercise', category: 'Calm', icon: 'air' },
   { id: 4, type: 'video', title: 'Understanding Burnout', duration: '12 min video', category: 'Education', icon: 'smart_display' },
   { id: 5, type: 'article', title: 'Navigating Academic Stress', duration: '8 min read', category: 'Academics', icon: 'menu_book' },
-  { id: 6, type: 'audio', title: 'Sleep Synchronization', duration: '30 min audio', category: 'Rest', icon: 'bedtime' },
+  { id: 6, type: 'audio', title: 'Sleep Synchronization', duration: '30 min audio', category: 'Sleep', icon: 'bedtime' },
 ];
 
 export default function Resources() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeSession, setActiveSession] = useState(null);
+  const todayKey = `mf_engaged_${new Date().toLocaleDateString('en-CA')}`;
   const [engagedMinutes, setEngagedMinutes] = useState(() => {
-    const saved = localStorage.getItem('mf_engaged_minutes');
-    return saved !== null ? parseInt(saved, 10) : 15;
+    const saved = localStorage.getItem(`mf_engaged_${new Date().toLocaleDateString('en-CA')}`);
+    return saved !== null ? parseInt(saved, 10) : 0;
   });
   const [showHistory, setShowHistory] = useState(false);
   
@@ -34,7 +35,7 @@ export default function Resources() {
     if (minutes > 0) {
       setEngagedMinutes(prev => {
         const newValue = Math.min(prev + minutes, 20); // Cap at 20 for the goal
-        localStorage.setItem('mf_engaged_minutes', newValue.toString());
+        localStorage.setItem(todayKey, newValue.toString());
         return newValue;
       });
     }
@@ -49,7 +50,7 @@ export default function Resources() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="resources" />
-      <Header title="Resource Nexus" subtext="SYNC_STATE: OPTIMAL" searchPlaceholder="Search resources, exercises, media..." />
+      <Header title="Resource Nexus" subtext="SYNC_STATE: OPTIMAL" searchPlaceholder="Search resources, exercises, media..." onSearch={setSearch} />
 
       <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -195,7 +196,7 @@ export default function Resources() {
               <div className="w-full aspect-video rounded-2xl overflow-hidden border border-white/10 bg-zinc-950 relative flex items-center justify-center">
                 <iframe 
                   className="w-full h-full"
-                  src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1" 
+                  src="https://www.youtube.com/embed/hTxWlT1hQQA?autoplay=1" 
                   title="YouTube video player" 
                   frameBorder="0" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
@@ -204,7 +205,10 @@ export default function Resources() {
               </div>
               
               <div className="flex justify-between items-center mt-6">
-                <p className="text-xs text-white/40">Visualized cognitive therapy streaming session</p>
+                <p className="text-xs text-white/40 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-xs text-[#D2FF00]">info</span>
+                  Educational telemetry preview. Mental Health Burnout Protocol active.
+                </p>
                 <button onClick={() => handleSessionComplete(12)} className="border rounded-lg px-4 py-2 font-bold terminal-text text-[10px] bg-[#D2FF00]/10 border-[#D2FF00]/30 text-[#D2FF00] hover:bg-[#D2FF00]/20 transition-all cursor-pointer">
                   MARK_SESSION_COMPLETE
                 </button>

@@ -25,6 +25,88 @@ export default function CalmCal() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('weekly'); // 'weekly' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' | 'info' }
+
+  const handleScheduleRecovery = async () => {
+    try {
+      setToast({ message: 'INJECTING_RECOVERY_CYCLES...', type: 'info' });
+      
+      const isDemo = user?.uid?.startsWith('demo-');
+      
+      let generatedEvents = [];
+      if (isDemo) {
+        // Generate a local recovery event for the selectedDate
+        const startHour = '14:00';
+        const endHour = '14:45';
+        const startIso = `${format(selectedDate, 'yyyy-MM-dd')}T${startHour}:00`;
+        const endIso = `${format(selectedDate, 'yyyy-MM-dd')}T${endHour}:00`;
+        
+        generatedEvents = [{
+          id: 'recovery_' + Date.now(),
+          title: '🌿 MindFlow Recovery Break',
+          type: 'recovery',
+          startTime: startIso,
+          endTime: endIso,
+          stressWeight: 0,
+          source: 'manual'
+        }];
+      } else {
+        const { data } = await api.post('/calendar/recover');
+        generatedEvents = data.events || [];
+      }
+      
+      if (generatedEvents.length > 0) {
+        setHeatmap(prev => [...prev, ...generatedEvents]);
+        setToast({ message: `Protocol complete: Generated ${generatedEvents.length} recovery breaks.`, type: 'success' });
+      } else {
+        setToast({ message: 'No high-stress peak periods detected in the next 7 days.', type: 'info' });
+      }
+      
+      setTimeout(() => setToast(null), 4000);
+    } catch (err) {
+      console.warn('API /calendar/recover failed or offline, generating local fallback:', err);
+      const startHour = '14:00';
+      const endHour = '14:45';
+      const startIso = `${format(selectedDate, 'yyyy-MM-dd')}T${startHour}:00`;
+      const endIso = `${format(selectedDate, 'yyyy-MM-dd')}T${endHour}:00`;
+      
+      const fallbackEvent = {
+        id: 'recovery_fallback_' + Date.now(),
+        title: '🌿 MindFlow Recovery Break',
+        type: 'recovery',
+        startTime: startIso,
+        endTime: endIso,
+        stressWeight: 0,
+        source: 'manual'
+      };
+      
+      setHeatmap(prev => [...prev, fallbackEvent]);
+      setToast({ message: 'Protocol completed locally: Injected daily recovery break.', type: 'success' });
+      setTimeout(() => setToast(null), 4000);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    const deletedEvent = heatmap.find(ev => ev.id === eventId);
+    setHeatmap(prev => prev.filter(ev => ev.id !== eventId));
+    setToast({ message: 'SYNCHRONIZING_DELETION...', type: 'info' });
+    
+    try {
+      const isDemo = !eventId || eventId.startsWith('mock_') || eventId.startsWith('temp_') || eventId.startsWith('recovery_') || eventId.startsWith('temp');
+      if (!isDemo) {
+        await api.delete(`/calendar/events/${eventId}`);
+      }
+      setToast({ message: 'Event permanently purged from timeline.', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      console.error('Failed to delete event:', err);
+      if (deletedEvent) {
+        setHeatmap(prev => [...prev, deletedEvent]);
+      }
+      setToast({ message: 'Failed to synchronize deletion. Rolled back.', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ 
     title: '', 
@@ -222,9 +304,6 @@ export default function CalmCal() {
 
     // 2. Schedule Gaps
     for (let i = 0; i < selectedDayEvents.length - 1; i++) {
-      const currentEnd = new Date(selectedDayEvents[i].endDate + 'T' + format(parseISO(selectedDayEvents[i].endTime), 'HH:mm')); // Simplified for logic
-      const nextStart = new Date(selectedDayEvents[i+1].startDate + 'T' + format(parseISO(selectedDayEvents[i+1].startTime), 'HH:mm'));
-      
       const gapMin = (new Date(selectedDayEvents[i+1].startTime) - new Date(selectedDayEvents[i].endTime)) / 60000;
       
       if (gapMin >= 30) {
@@ -247,7 +326,7 @@ export default function CalmCal() {
     }
 
     return breaks;
-  }, [selectedDayEvents, weeklyMetrics]);
+  }, [selectedDayEvents]);
 
   // Scroll parallax
   useEffect(() => {
@@ -357,8 +436,13 @@ export default function CalmCal() {
                       <p className="text-sm" style={{ color:'#b9cacb' }}>AI suggests a 45-min deep focus break after the Exam period.</p>
                     </div>
                   </div>
-                  <button className="relative z-10 px-8 py-3 rounded-full font-bold text-xs terminal-text transition-all hover:shadow-[0_0_20px_rgba(0,219,231,0.4)]"
-                    style={{ background:'#e1fdff', color:'#003548' }}>Schedule Now</button>
+                  <button 
+                    onClick={handleScheduleRecovery}
+                    className="relative z-10 px-8 py-3 rounded-full font-bold text-xs terminal-text transition-all hover:shadow-[0_0_20px_rgba(0,219,231,0.4)] cursor-pointer"
+                    style={{ background:'#e1fdff', color:'#003548' }}
+                  >
+                    Schedule Now
+                  </button>
                 </div>
               </motion.div>
 
@@ -388,6 +472,13 @@ export default function CalmCal() {
                             <p className="text-sm opacity-60" style={{ color:'#b9cacb' }}>Weight: {item.stressWeight}</p>
                           </div>
                           <div className="flex flex-col items-end gap-2">
+                            <button 
+                              onClick={() => handleDeleteEvent(item.id)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-all cursor-pointer mb-1"
+                              title="Delete Event"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
                             <span className="px-3 py-1 rounded-lg text-[10px] font-bold terminal-text" style={{ background:'rgba(42,42,43,0.8)', color:'#b9cacb' }}>
                               {Math.round((new Date(item.endTime) - new Date(item.startTime)) / 60000)} MIN
                             </span>
@@ -615,6 +706,28 @@ export default function CalmCal() {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }} 
+            animate={{ opacity: 1, y: 0, scale: 1 }} 
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            style={{ 
+              position: 'fixed', bottom: 32, right: 32, zIndex: 1000, 
+              background: 'rgba(14, 14, 15, 0.95)', backdropFilter: 'blur(20px)',
+              border: toast.type === 'success' ? '1px solid rgba(0, 219, 231, 0.3)' : toast.type === 'error' ? '1px solid rgba(255, 180, 171, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: toast.type === 'success' ? '0 10px 30px rgba(0, 219, 231, 0.2)' : toast.type === 'error' ? '0 10px 30px rgba(255, 180, 171, 0.2)' : '0 10px 30px rgba(255, 255, 255, 0.05)',
+              borderRadius: '1.25rem', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12
+            }}
+          >
+            <span className="material-symbols-outlined animate-pulse" style={{ color: toast.type === 'success' ? '#00f2ff' : toast.type === 'error' ? '#ffb4ab' : '#ebb2ff' }}>
+              {toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'warning' : 'info'}
+            </span>
+            <span className="text-xs font-bold terminal-text" style={{ color: '#e5e2e3' }}>{toast.message}</span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

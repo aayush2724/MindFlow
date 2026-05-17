@@ -62,6 +62,21 @@ export default function Community() {
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [activePostForReplies, setActivePostForReplies] = useState(null);
   const [openChatGroup, setOpenChatGroup] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' | 'info' }
+
+  const handleDeletePost = (postId) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    setActiveMenuId(null);
+    setToast({ message: 'Broadcast deleted and erased from telemetry logs.', type: 'success' });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleReportPost = (postId) => {
+    setActiveMenuId(null);
+    setToast({ message: 'Report synced to Sentinel Node. Moderation queued.', type: 'info' });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     localStorage.setItem('mf_community_posts', JSON.stringify(posts));
@@ -189,6 +204,9 @@ export default function Community() {
 
               {/* Feed */}
               <div className="space-y-4">
+                {displayedPosts.length === 0 && (
+                  <div className="text-center py-16 text-white/30 terminal-text">NO_TRANSMISSIONS_IN_THIS_CLUSTER</div>
+                )}
                 {displayedPosts.map((post, i) => (
                   <motion.div 
                     key={post.id}
@@ -205,9 +223,46 @@ export default function Community() {
                           <div className="text-[10px] terminal-text text-white/30">{post.time}</div>
                         </div>
                       </div>
-                      <button className="text-white/20 hover:text-white/60 transition-colors">
-                        <span className="material-symbols-outlined text-[18px]">more_horiz</span>
-                      </button>
+                      <div className="relative">
+                        <button 
+                          onClick={() => setActiveMenuId(activeMenuId === post.id ? null : post.id)}
+                          className="text-white/20 hover:text-white/60 transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">more_horiz</span>
+                        </button>
+                        
+                        <AnimatePresence>
+                          {activeMenuId === post.id && (
+                            <>
+                              <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
+                              <motion.div 
+                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                className="absolute right-0 mt-2 w-48 rounded-xl border border-white/10 bg-[#0e0e0f]/95 backdrop-blur-xl shadow-2xl p-2 z-40"
+                              >
+                                {post.id > 3 ? (
+                                  <button 
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer"
+                                  >
+                                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                                    Delete Broadcast
+                                  </button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleReportPost(post.id)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[#D2FF00] hover:bg-[#D2FF00]/10 hover:text-[#D2FF00]/90 transition-colors cursor-pointer"
+                                  >
+                                    <span className="material-symbols-outlined text-[16px]">flag</span>
+                                    Report Transmission
+                                  </button>
+                                )}
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                     <p className="text-sm text-white/70 leading-relaxed mb-4">{post.content}</p>
                     <div className="flex flex-wrap gap-2 mb-6">
@@ -314,6 +369,28 @@ export default function Community() {
             group={openChatGroup}
             onClose={() => setOpenChatGroup(null)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }} 
+            animate={{ opacity: 1, y: 0, scale: 1 }} 
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            style={{ 
+              position: 'fixed', bottom: 32, right: 32, zIndex: 1000, 
+              background: 'rgba(14, 14, 15, 0.95)', backdropFilter: 'blur(20px)',
+              border: toast.type === 'success' ? '1px solid rgba(0, 219, 231, 0.3)' : toast.type === 'error' ? '1px solid rgba(255, 180, 171, 0.3)' : '1px solid rgba(192, 132, 252, 0.3)',
+              boxShadow: toast.type === 'success' ? '0 10px 30px rgba(0, 219, 231, 0.2)' : toast.type === 'error' ? '0 10px 30px rgba(255, 180, 171, 0.2)' : '0 10px 30px rgba(192, 132, 252, 0.2)',
+              borderRadius: '1.25rem', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12
+            }}
+          >
+            <span className="material-symbols-outlined animate-pulse" style={{ color: toast.type === 'success' ? '#00f2ff' : toast.type === 'error' ? '#ffb4ab' : '#c084fc' }}>
+              {toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'warning' : 'hub'}
+            </span>
+            <span className="text-xs font-bold terminal-text" style={{ color: '#e5e2e3' }}>{toast.message}</span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

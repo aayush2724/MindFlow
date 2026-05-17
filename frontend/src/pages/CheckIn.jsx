@@ -44,6 +44,7 @@ export default function CheckIn() {
       };
 
       await api.post('/checkins', payload);
+      localStorage.setItem('mf_last_checkin_date', payload.dateKey);
       
       // Wait briefly for the server-side async calculation to finish
       await new Promise(r => setTimeout(r, 1200));
@@ -71,6 +72,7 @@ export default function CheckIn() {
       console.error('Failed to save check-in:', err);
       if (err.response?.status === 400) {
         setError("Sync blocked: You've already submitted a check-in for today.");
+        localStorage.setItem('mf_last_checkin_date', new Date().toLocaleDateString('en-CA'));
       } else {
         setError("Neural link unstable: Failed to sync check-in data.");
       }

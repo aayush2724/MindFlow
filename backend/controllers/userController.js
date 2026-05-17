@@ -13,7 +13,7 @@ const onboardUser = async (req, res, next) => {
     const userDoc = await userRef.get();
 
     if (userDoc.exists) {
-      return res.status(400).json({ error: 'User already onboarded' });
+      return res.status(200).json({ message: 'Already onboarded', user: userDoc.data() });
     }
 
     const userData = {

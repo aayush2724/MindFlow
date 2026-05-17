@@ -8,6 +8,7 @@ export default function Alerts() {
   const [alerts, setAlerts] = useState([]);
   const [acknowledged, setAcknowledged] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -55,7 +56,7 @@ export default function Alerts() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="alerts" />
-      <Header title="Cognitive Alerts" subtext="Automated stress warnings and risk-level interventions" searchPlaceholder="SEARCH_ALERTS..." />
+      <Header title="Cognitive Alerts" subtext="Automated stress warnings and risk-level interventions" searchPlaceholder="SEARCH_ALERTS..." onSearch={setSearch} />
 
       {/* Main */}
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">
@@ -126,15 +127,23 @@ export default function Alerts() {
           </motion.div>
 
           {/* Section 2: Alerts Feed */}
-          {alerts.length === 0 && !loading ? (
+          {alerts.filter(a => 
+            (a.message || '').toLowerCase().includes(search.toLowerCase()) ||
+            (a.studentAlias || '').toLowerCase().includes(search.toLowerCase()) ||
+            (a.pseudonym || '').toLowerCase().includes(search.toLowerCase())
+          ).length === 0 && !loading ? (
             <div className="rounded-3xl p-16 border text-center my-12" style={{ background:'rgba(10,10,11,0.4)', backdropFilter:'blur(40px)', borderColor:'rgba(255,255,255,0.08)' }}>
               <span className="material-symbols-outlined text-4xl mb-4 text-[#00dbe7]">notifications_off</span>
               <h3 className="font-semibold text-lg text-white mb-2" style={{ fontFamily: 'Space Grotesk' }}>No Cognitive Alerts</h3>
-              <p className="text-sm text-[#b9cacb] max-w-md mx-auto">All systems nominal. No unacknowledged stress alerts or risk interventions logged in this cohort cluster.</p>
+              <p className="text-sm text-[#b9cacb] max-w-md mx-auto">All systems nominal. No unacknowledged stress alerts or risk interventions logged in this cohort cluster matching your query.</p>
             </div>
           ) : (
             <div className="space-y-4 mb-12">
-              {alerts.map((alert, i) => {
+              {alerts.filter(a => 
+                (a.message || '').toLowerCase().includes(search.toLowerCase()) ||
+                (a.studentAlias || '').toLowerCase().includes(search.toLowerCase()) ||
+                (a.pseudonym || '').toLowerCase().includes(search.toLowerCase())
+              ).map((alert, i) => {
                 const isAck = acknowledged.includes(alert.id);
                 const riskColor = alert.riskLevel === 'critical' ? '#ffb4ab' : '#D2FF00';
                 const riskLabel = alert.riskLevel === 'critical' ? 'CRITICAL' : 'HIGH_RISK';
@@ -152,7 +161,7 @@ export default function Alerts() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between w-full gap-4">
                         <div className="flex items-center gap-3">
-                          <span className="font-bold text-lg" style={{ color:'#e1fdff' }}>{alert.pseudonym}</span>
+                          <span className="font-bold text-lg" style={{ color:'#e1fdff' }}>{alert.studentAlias || alert.pseudonym || 'Anonymous'}</span>
                           <span className="px-2 py-0.5 rounded border font-bold tracking-widest text-[9px] terminal-text" 
                             style={{ background:`${riskColor}1A`, color:riskColor, borderColor:`${riskColor}33` }}>
                             {riskLabel}
@@ -165,7 +174,7 @@ export default function Alerts() {
                           )}
                         </div>
                         <div className="flex items-center gap-6 shrink-0">
-                          <span className="text-xs terminal-text opacity-40" style={{ color:'#b9cacb' }}>{alert.triggeredAt}</span>
+                          <span className="text-xs terminal-text opacity-40" style={{ color:'#b9cacb' }}>{alert.triggeredAt ? new Date(alert.triggeredAt).toLocaleString() : 'N/A'}</span>
                           {!isAck && (
                             <button 
                               onClick={() => handleAcknowledge(alert.id)}

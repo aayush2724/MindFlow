@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
-import { storage, DEMO_MODE } from '../lib/firebase';
+import { storage } from '../lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AccountSettings() {
@@ -37,7 +37,7 @@ export default function AccountSettings() {
       setToast({ message: 'SYNCHRONIZING_PROFILE...', type: 'info' });
       let finalPhotoURL = avatar;
 
-      if (!DEMO_MODE && avatarFile) {
+      if (avatarFile) {
         const refInstance = storageRef(storage, `avatars/${user?.uid || Date.now()}`);
         await uploadBytes(refInstance, avatarFile);
         finalPhotoURL = await getDownloadURL(refInstance);

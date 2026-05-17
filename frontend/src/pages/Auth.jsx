@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { DEMO_MODE } from '../lib/firebase';
 import { getAdditionalUserInfo } from 'firebase/auth';
 
 export default function Auth() {
-  const { signInDemo, login, signup, loginWithGoogle } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState('signin');
   const [loading, setLoading] = useState(false);
@@ -16,8 +15,6 @@ export default function Auth() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [signupRole, setSignupRole] = useState('student');
-  const showDemo = DEMO_MODE || (import.meta.env.VITE_HIDE_DEMO !== 'true' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
 
 
   const handleAuth = async (e) => {
@@ -121,15 +118,6 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoLogin = async (counselor = false) => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
-    signInDemo(counselor);
-    setLoading(false);
-    const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
-    navigate(counselor ? '/wellpulse' : (hasOnboarded ? '/dashboard' : '/onboarding'));
   };
 
   return (
@@ -276,31 +264,6 @@ export default function Auth() {
             </svg>
             GOOGLE AUTH
           </button>
-
-          {showDemo && (
-            <>
-              <div className="flex items-center gap-4 mb-6 relative z-10">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">System Demo</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              <div className="flex flex-row gap-4 relative z-10">
-                <button onClick={() => handleDemoLogin(false)} disabled={loading}
-                  className="flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 border transition-all"
-                  style={{ background: 'transparent', borderColor: 'rgba(0,219,231,0.2)', color: '#00DBE7', boxShadow: 'inset 0 0 10px rgba(0,219,231,0.05)' }}>
-                  <span className="material-symbols-outlined text-[14px]">science</span>
-                  STUDENT
-                </button>
-                <button onClick={() => handleDemoLogin(true)} disabled={loading}
-                  className="flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 border transition-all"
-                  style={{ background: 'transparent', borderColor: 'rgba(210,255,0,0.2)', color: '#D2FF00', boxShadow: 'inset 0 0 10px rgba(210,255,0,0.05)' }}>
-                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
-                  COUNSELOR
-                </button>
-              </div>
-            </>
-          )}
         </div>
 
         <p className="text-center text-[10px] tracking-widest text-white/20 mt-8 font-mono">

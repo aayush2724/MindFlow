@@ -1,11 +1,7 @@
 // Firebase configuration
-// In production, replace with your actual Firebase project config
-// The app uses mock data fallback if Firebase is not configured
-
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -17,25 +13,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Check if we have valid-looking config
-export const DEMO_MODE = !firebaseConfig.apiKey || 
-                         firebaseConfig.apiKey === 'your_api_key' || 
-                         firebaseConfig.apiKey.startsWith('demo-');
-
-let app, auth, db, googleProvider, storage;
-
-if (!DEMO_MODE) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    googleProvider = new GoogleAuthProvider();
-    storage = getStorage(app);
-  } catch (err) {
-    console.error('Firebase initialization failed:', err.message);
-    // If it fails, we effectively fall back to demo mode logic in components
-  }
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+const storage = getStorage(app);
 
 export { auth, db, googleProvider, storage };
 export default app;

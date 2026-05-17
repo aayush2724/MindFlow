@@ -1,59 +1,24 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import api from '../lib/api';
-import { DEMO_MODE, auth, googleProvider, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, googleProvider } from '../lib/firebase';
 import {
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   updateProfile,
-  getAdditionalUserInfo,
 } from 'firebase/auth';
 
 const AuthContext = createContext(null);
-
-// Mock user for demo mode
-const MOCK_USER = {
-  uid: 'demo-user-001',
-  displayName: 'Alex Johnson',
-  email: 'alex@university.edu',
-  photoURL: null,
-  role: 'student',
-};
-
-const MOCK_COUNSELOR = {
-  uid: 'demo-counselor-001',
-  displayName: 'Dr. Sarah Chen',
-  email: 'sarah.chen@university.edu',
-  photoURL: null,
-  role: 'counselor',
-};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('student'); // 'student' | 'counselor'
 
-  // Role is exclusively fetched from Firestore via the backend
-  // to prevent email-based privilege escalation.
-
   useEffect(() => {
-    if (DEMO_MODE) {
-      const saved = localStorage.getItem('mf_demo_user');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
-        setUser({ ...parsed, onboarded: parsed.role === 'counselor' ? true : hasOnboarded });
-        setRole(parsed.role || 'student');
-      }
-      setLoading(false);
-      return;
-    }
-
     const checkRedirect = async () => {
       try {
         const result = await getRedirectResult(auth);
@@ -92,34 +57,43 @@ export function AuthProvider({ children }) {
         }
 
         try {
-          // Check Firestore directly — bypasses Express backend
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+          // Fetch profile from our backend via Express API (robust and bypasses client permission rules)
+          const { data: profile } = await api.get('/users/me');
 
-          if (userDocSnap.exists()) {
-            // Profile exists → user is onboarded
-            const profile = userDocSnap.data();
-            localStorage.setItem('mf_onboarding', 'true');
-            setUser({ 
-              ...firebaseUser, 
-              ...profile, 
-              onboarded: true 
-            });
-            setRole(profile.role || 'student');
-          } else {
-            // No profile → new user → send to onboarding
-            setUser({ 
+          localStorage.setItem('mf_onboarding', 'true');
+          setUser({ 
+            ...firebaseUser, 
+            ...profile, 
+            onboarded: true 
+          });
+          setRole(profile.role || 'student');
+        } catch (err) {
+          console.error('Profile fetch failed:', err.message);
+          
+          const is404 = err.response && err.response.status === 404;
+          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+
+          // Avoid overwriting/downgrading active local states if signup/onboarding flow is currently in progress
+          setUser(prev => {
+            if (prev && prev.uid === firebaseUser.uid) {
+              return {
+                ...firebaseUser,
+                ...prev
+              };
+            }
+            return { 
               ...firebaseUser, 
               role: 'student', 
-              onboarded: false 
-            });
-            setRole('student');
-          }
-        } catch (err) {
-          console.error('Firestore check failed:', err);
-          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
-          setUser({ ...firebaseUser, role: 'student', onboarded: hasOnboarded });
-          setRole('student');
+              onboarded: is404 ? false : hasOnboarded 
+            };
+          });
+
+          setRole(prev => {
+            if (prev && prev !== 'student') {
+              return prev;
+            }
+            return 'student';
+          });
         }
       } else {
         setUser(null);
@@ -129,26 +103,11 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
-  const signInDemo = (asCounselor = false) => {
-    const mockUser = asCounselor ? MOCK_COUNSELOR : MOCK_USER;
-    const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
-    const userWithOnboard = { ...mockUser, onboarded: asCounselor ? true : hasOnboarded };
-    localStorage.setItem('mf_demo_user', JSON.stringify(userWithOnboard));
-    setUser(userWithOnboard);
-    setRole(mockUser.role);
-  };
-
   const logout = async () => {
     localStorage.removeItem('mf_onboarding');
     localStorage.removeItem('google_signup_pending');
-    if (DEMO_MODE) {
-      localStorage.removeItem('mf_demo_user');
-      localStorage.removeItem('mf_last_checkin');
-      localStorage.removeItem('mf_history');
-      setUser(null);
-      setRole('student');
-      return;
-    }
+    localStorage.removeItem('mf_last_checkin');
+    localStorage.removeItem('mf_history');
     try {
       if (auth) {
         await signOut(auth);
@@ -162,12 +121,6 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (email, password) => {
-    if (DEMO_MODE) {
-      const isCounselor = email.includes('counselor');
-      signInDemo(isCounselor);
-      const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
-      return { isNewUser: !isCounselor && !hasOnboarded, role: isCounselor ? 'counselor' : 'student' };
-    }
     const cred = await signInWithEmailAndPassword(auth, email, password);
     try {
       const { data: profile } = await api.get('/users/me');
@@ -192,10 +145,6 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async (email, password, name, chosenRole = 'student') => {
-    if (DEMO_MODE) {
-      signInDemo(chosenRole === 'counselor');
-      return { isNewUser: chosenRole === 'student' };
-    }
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: name });
     
@@ -212,21 +161,11 @@ export function AuthProvider({ children }) {
   };
 
   const loginWithGoogle = async () => {
-    if (DEMO_MODE) {
-      signInDemo(false);
-      return;
-    }
     const result = await signInWithPopup(auth, googleProvider);
     return result;
   };
 
   const updateUserProfile = async (updates) => {
-    if (DEMO_MODE) {
-      const updatedUser = { ...user, ...updates };
-      localStorage.setItem('mf_demo_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      return;
-    }
     // Update Firebase standard auth
     const standardUpdates = {};
     if ('displayName' in updates) standardUpdates.displayName = updates.displayName;
@@ -252,7 +191,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, signInDemo, logout, login, signup, loginWithGoogle, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, role, logout, login, signup, loginWithGoogle, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

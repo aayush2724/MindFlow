@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { motion } from 'framer-motion';
-import { fetchCampusStats } from '../lib/firestore';
+import { fetchCampusStats, fetchDepartmentStats, fetchSyslogAlerts } from '../lib/firestore';
 
 const DEPTS = [
   { name:'School of Engineering', nodes:'2,450_NODES', mood:'3.2 / 5.0', risk:'CRITICAL', riskColor:'#ffb4ab', dotColor:'#ffb4ab' },
@@ -26,25 +26,61 @@ export default function WellPulse() {
     totalStudents: 0
   });
   const [departments, setDepartments] = useState(DEPTS);
+  const [alerts, setAlerts] = useState([
+    { id: '1', type:'CRITICAL_DETECTION', time:'02:14:05', msg:'COHORT_CS_Y3: Burnout threshold exceeded [0.75] for 45/200 nodes.', color:'#ffb4ab', action:'DECODE_AND_INTERVENE', bg:'rgba(255,180,171,0.05)', border:'rgba(255,180,171,0.3)' },
+    { id: '2', type:'PATTERN_SYNC',       time:'01:55:20', msg:'LATENIGHT_ANOMALY: High intensity activity detected in LAW_LIB cluster.', color:'#00dbe7', bg:'rgba(32,31,32,0.5)' },
+    { id: '3', type:'HEALTH_CHECK',        time:'00:10:45', msg:'MED_SCHOOL: Positive trend. Calm_Sessions up 22% vs 24H_AVG.', color:'#D2FF00', bg:'rgba(32,31,32,0.5)' },
+  ]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchCampusStats();
+        const [statsData, deptData, alertsData] = await Promise.all([
+          fetchCampusStats(),
+          fetchDepartmentStats(),
+          fetchSyslogAlerts()
+        ]);
         setStats({
-          campusAverageBurnout: data.avgBurnout,
-          highRiskCount: data.highRiskCount,
-          checkInRate: data.engagementIndex,
-          totalStudents: 14200 // Stable number for HUD
+          campusAverageBurnout: statsData.avgBurnout,
+          highRiskCount: statsData.highRiskCount,
+          checkInRate: statsData.engagementIndex,
+          totalStudents: statsData.totalStudents
         });
+        if (deptData && deptData.length > 0) {
+          // Map backend department format to frontend expected format
+          const formattedDepts = deptData.map(d => ({
+            department: d.department,
+            studentCount: d.studentCount,
+            avgBurnoutScore: d.avgBurnoutScore,
+            highRiskCount: d.highRiskCount
+          }));
+          setDepartments(formattedDepts);
+        }
+        if (alertsData && alertsData.length > 0) {
+          const formattedAlerts = alertsData.map(a => ({
+            id: a.id,
+            type: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'CRITICAL_DETECTION' : 'WARNING',
+            time: new Date(a.triggeredAt).toLocaleTimeString(),
+            msg: `NODE ${a.studentAlias}: ${a.message || `Burnout score ${a.score}`}`,
+            color: a.riskLevel === 'critical' || a.riskLevel === 'high' ? '#ffb4ab' : '#00dbe7',
+            action: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'DECODE_AND_INTERVENE' : null,
+            bg: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'rgba(255,180,171,0.05)' : 'rgba(32,31,32,0.5)',
+            border: a.riskLevel === 'critical' || a.riskLevel === 'high' ? 'rgba(255,180,171,0.3)' : undefined
+          }));
+          setAlerts(formattedAlerts);
+        }
       } catch (err) {
         console.error('Failed to fetch analytics:', err);
       } finally {
         setLoading(false);
       }
     }
-    load();
+    
+    load(); // Initial load
+    const interval = setInterval(load, 5000); // Poll every 5 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   const kpis = [
@@ -163,12 +199,8 @@ export default function WellPulse() {
                   </div>
                 </div>
                 <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-                  {[
-                    { type:'CRITICAL_DETECTION', time:'02:14:05', msg:'COHORT_CS_Y3: Burnout threshold exceeded [0.75] for 45/200 nodes.', color:'#ffb4ab', action:'DECODE_AND_INTERVENE', bg:'rgba(255,180,171,0.05)', border:'rgba(255,180,171,0.3)' },
-                    { type:'PATTERN_SYNC',       time:'01:55:20', msg:'LATENIGHT_ANOMALY: High intensity activity detected in LAW_LIB cluster.', color:'#00dbe7', bg:'rgba(32,31,32,0.5)' },
-                    { type:'HEALTH_CHECK',        time:'00:10:45', msg:'MED_SCHOOL: Positive trend. Calm_Sessions up 22% vs 24H_AVG.', color:'#D2FF00', bg:'rgba(32,31,32,0.5)' },
-                  ].map((alert, i) => (
-                    <div key={i} className={`p-4 rounded-xl border ${alert.action ? 'critical-alert-glow' : ''}`}
+                  {alerts.map((alert, i) => (
+                    <div key={alert.id || i} className={`p-4 rounded-xl border ${alert.action ? 'critical-alert-glow' : ''}`}
                       style={{ background:alert.bg, borderColor:alert.border || 'rgba(255,255,255,0.08)' }}>
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] terminal-text font-bold" style={{ color:alert.color }}>{alert.type}</span>

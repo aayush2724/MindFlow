@@ -8,6 +8,7 @@ import {
   orderBy, limit, serverTimestamp, doc, setDoc, getDoc,
 } from 'firebase/firestore';
 import { db, DEMO_MODE } from './firebase';
+import api from './api';
 import { calculateBurnoutScore, generateMockHistory } from './burnoutEngine';
 
 // ─── Paths ────────────────────────────────────────────────
@@ -147,10 +148,37 @@ export async function fetchCampusStats() {
       highRiskCount: data.highRiskCount,
       calmSessions: 3492, // Still mock for now as this isn't in backend yet
       engagementIndex: data.checkInRate,
+      totalStudents: data.totalStudents || 14200,
     };
   } catch (err) {
     console.error('Failed to fetch campus stats:', err);
-    return { avgBurnout: 0, highRiskCount: 0, calmSessions: 0, engagementIndex: 0 };
+    return { avgBurnout: 0, highRiskCount: 0, calmSessions: 0, engagementIndex: 0, totalStudents: 14200 };
+  }
+}
+
+export async function fetchDepartmentStats() {
+  if (DEMO_MODE) {
+    return [];
+  }
+  try {
+    const { data } = await api.get('/analytics/departments');
+    return data;
+  } catch (err) {
+    console.error('Failed to fetch department stats:', err);
+    return [];
+  }
+}
+
+export async function fetchSyslogAlerts() {
+  if (DEMO_MODE) {
+    return [];
+  }
+  try {
+    const { data } = await api.get('/alerts');
+    return data;
+  } catch (err) {
+    console.error('Failed to fetch alerts:', err);
+    return [];
   }
 }
 

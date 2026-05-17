@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { DEMO_MODE } from '../lib/firebase';
+import { getAdditionalUserInfo } from 'firebase/auth';
 
 export default function Auth() {
   const { signInDemo, login, signup, loginWithGoogle } = useAuth();
@@ -37,7 +38,22 @@ export default function Auth() {
       }
       navigate(isNew ? '/onboarding' : (userRole === 'counselor' ? '/wellpulse' : '/dashboard'));
     } catch (err) {
-      setError(err.message);
+      const code = err.code;
+      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setError('Incorrect email or password. Please try again.');
+      } else if (code === 'auth/email-already-in-use') {
+        setError('An account already exists with this email. Please sign in instead.');
+      } else if (code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters long.');
+      } else if (code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please wait a moment before trying again.');
+      } else if (code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,10 +63,61 @@ export default function Auth() {
     setLoading(true);
     setError('');
     try {
-      localStorage.setItem('mf_signup_role', tab === 'signup' ? signupRole : 'student');
-      await loginWithGoogle();
+      if (tab === 'signup') {
+        // New user flow — set pending flag so auth page 
+        // stays mounted and form fields get populated
+        localStorage.setItem('google_signup_pending', 'true');
+        localStorage.setItem('mf_signup_role', signupRole);
+      }
+
+      const result = await loginWithGoogle();
+      if (!result) return;
+
+      const additionalInfo = getAdditionalUserInfo(result);
+      const isNewUser = additionalInfo?.isNewUser;
+
+      if (tab === 'signin') {
+        // Sign in flow — existing user only
+        if (isNewUser) {
+          // They don't have an account — tell them to sign up
+          await result.user.delete(); // remove the auto-created Firebase user
+          localStorage.removeItem('google_signup_pending');
+          setError('No account found with this Google account. Please create an account first.');
+          return;
+        }
+        // Existing user — redirect to dashboard (handled by onAuthStateChanged)
+
+      } else {
+        // Signup flow — new user only
+        if (!isNewUser) {
+          // Account already exists — tell them to sign in
+          localStorage.removeItem('google_signup_pending');
+          setError('An account already exists with this Google account. Please sign in instead.');
+          setTab('signin');
+          return;
+        }
+        // New user — populate form fields and wait for 2s delay
+        setName(result.user.displayName || '');
+        setEmail(result.user.email || '');
+      }
+
     } catch (err) {
-      setError(err.message);
+      localStorage.removeItem('google_signup_pending');
+      // Handle specific Firebase auth errors with friendly messages
+      const code = err.code;
+      if (code === 'auth/popup-closed-by-user') {
+        setError('Sign-in popup was closed. Please try again.');
+      } else if (code === 'auth/popup-blocked') {
+        setError('Popup was blocked by your browser. Please allow popups and try again.');
+      } else if (code === 'auth/account-exists-with-different-credential') {
+        setError('An account already exists with this email using a different sign-in method.');
+      } else if (code === 'auth/cancelled-popup-request') {
+        // Silently ignore — user opened multiple popups
+      } else if (code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError(err.message || 'Google authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

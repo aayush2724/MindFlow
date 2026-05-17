@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import api from '../lib/api';
-import { DEMO_MODE, auth, googleProvider } from '../lib/firebase';
+import { DEMO_MODE, auth, googleProvider, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import {
   onAuthStateChanged,
   signOut,
@@ -83,17 +84,39 @@ export function AuthProvider({ children }) {
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // If a Google signup is in progress, delay setting the user in state
+        // so that the Auth page has time to display the auto-fill details before redirection
+        if (localStorage.getItem('google_signup_pending') === 'true') {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          localStorage.removeItem('google_signup_pending');
+        }
+
         try {
-          // In real mode, we fetch the extended profile from our backend
-          const { data: profile } = await api.get('/users/me');
-          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true' || !!profile.semester;
-          if (hasOnboarded) {
+          // Check Firestore directly — bypasses Express backend
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            // Profile exists → user is onboarded
+            const profile = userDocSnap.data();
             localStorage.setItem('mf_onboarding', 'true');
+            setUser({ 
+              ...firebaseUser, 
+              ...profile, 
+              onboarded: true 
+            });
+            setRole(profile.role || 'student');
+          } else {
+            // No profile → new user → send to onboarding
+            setUser({ 
+              ...firebaseUser, 
+              role: 'student', 
+              onboarded: false 
+            });
+            setRole('student');
           }
-          setUser({ ...firebaseUser, ...profile, onboarded: profile.role === 'counselor' ? true : hasOnboarded });
-          setRole(profile.role || 'student');
         } catch (err) {
-          console.error('Failed to fetch user profile from backend:', err);
+          console.error('Firestore check failed:', err);
           const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
           setUser({ ...firebaseUser, role: 'student', onboarded: hasOnboarded });
           setRole('student');
@@ -117,14 +140,25 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     localStorage.removeItem('mf_onboarding');
+    localStorage.removeItem('google_signup_pending');
     if (DEMO_MODE) {
       localStorage.removeItem('mf_demo_user');
       localStorage.removeItem('mf_last_checkin');
       localStorage.removeItem('mf_history');
       setUser(null);
+      setRole('student');
       return;
     }
-    await signOut(auth);
+    try {
+      if (auth) {
+        await signOut(auth);
+      }
+    } catch (err) {
+      console.error('Firebase signOut failed, forcing local session clear:', err);
+    } finally {
+      setUser(null);
+      setRole('student');
+    }
   };
 
   const login = async (email, password) => {
@@ -137,18 +171,23 @@ export function AuthProvider({ children }) {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     try {
       const { data: profile } = await api.get('/users/me');
-      const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true' || !!profile.semester;
-      if (hasOnboarded) {
+      
+      if (profile.role !== 'counselor') {
         localStorage.setItem('mf_onboarding', 'true');
       }
-      setUser({ ...cred.user, ...profile, onboarded: profile.role === 'counselor' ? true : hasOnboarded });
+      
+      setUser({ 
+        ...cred.user, 
+        ...profile, 
+        onboarded: true
+      });
       setRole(profile.role || 'student');
-      return { isNewUser: !hasOnboarded, role: profile.role || 'student' };
+      return { isNewUser: false, role: profile.role || 'student' };
     } catch (err) {
-      const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
-      setUser({ ...cred.user, role: 'student', onboarded: hasOnboarded });
+      console.error('No profile found, treating as new user:', err);
+      setUser({ ...cred.user, role: 'student', onboarded: false });
       setRole('student');
-      return { isNewUser: !hasOnboarded, role: 'student' };
+      return { isNewUser: true, role: 'student' };
     }
   };
 
@@ -177,8 +216,8 @@ export function AuthProvider({ children }) {
       signInDemo(false);
       return;
     }
-    // Switch to redirect to avoid popup-blocked errors
-    await signInWithRedirect(auth, googleProvider);
+    const result = await signInWithPopup(auth, googleProvider);
+    return result;
   };
 
   const updateUserProfile = async (updates) => {

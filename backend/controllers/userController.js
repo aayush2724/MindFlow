@@ -24,6 +24,7 @@ const onboardUser = async (req, res, next) => {
       semester: semester || null,
       subjects: subjects || [],
       sleepGoal: sleepGoal || 8,
+      onboarded: true,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };

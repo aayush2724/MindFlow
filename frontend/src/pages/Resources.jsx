@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import AudioSessionModal from '../components/resources/AudioSessionModal';
+import ArticleModal from '../components/resources/ArticleModal';
+import BreathingModal from '../components/resources/BreathingModal';
 
 const MOCK_RESOURCES = [
   { id: 1, type: 'article', title: 'Cognitive Reframing Techniques', duration: '5 min read', category: 'Therapy', icon: 'psychology' },
@@ -14,6 +17,25 @@ const MOCK_RESOURCES = [
 
 export default function Resources() {
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeSession, setActiveSession] = useState(null);
+  const [engagedMinutes, setEngagedMinutes] = useState(15);
+  
+  const handleStartSession = (res) => {
+    setActiveSession(res);
+  };
+
+  const handleSessionComplete = (minutes) => {
+    if (minutes > 0) {
+      setEngagedMinutes(prev => Math.min(prev + minutes, 20)); // Cap at 20 for the goal
+    }
+    setActiveSession(null);
+  };
+
+  const filteredResources = MOCK_RESOURCES.filter(res => 
+    (selectedCategory === 'All' || res.category === selectedCategory) &&
+    (res.title.toLowerCase().includes(search.toLowerCase()))
+  );
   
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
@@ -45,7 +67,10 @@ export default function Resources() {
                   <p className="text-white/60 text-sm max-w-xl">A 15-minute guided binaural sequence designed to down-regulate your nervous system and prepare the mind for deep, focused academic work.</p>
                 </div>
                 <div className="flex items-center gap-4 mt-8">
-                  <button className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold tracking-widest bg-[#e1fdff] text-[#020202] hover:scale-105 transition-transform">
+                  <button 
+                    onClick={() => handleStartSession({ title: 'Neural Synchronization: Alpha State', type: 'audio', category: 'Focus' })}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold tracking-widest bg-[#e1fdff] text-[#020202] hover:scale-105 transition-transform"
+                  >
                     <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
                     START SESSION
                   </button>
@@ -65,12 +90,17 @@ export default function Resources() {
                   <div className="relative w-20 h-20 flex items-center justify-center">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
-                      <circle cx="50" cy="50" r="45" fill="none" stroke="#D2FF00" strokeWidth="6" strokeDasharray="283" strokeDashoffset="100" style={{ filter: 'drop-shadow(0 0 6px rgba(210,255,0,0.5))' }} />
+                      <circle 
+                        cx="50" cy="50" r="45" fill="none" stroke="#D2FF00" strokeWidth="6" 
+                        strokeDasharray="283" 
+                        strokeDashoffset={283 - (283 * (engagedMinutes / 20))} 
+                        style={{ filter: 'drop-shadow(0 0 6px rgba(210,255,0,0.5))', transition: 'stroke-dashoffset 1s ease-out' }} 
+                      />
                     </svg>
-                    <span className="absolute text-xl font-bold text-[#D2FF00]">65%</span>
+                    <span className="absolute text-xl font-bold text-[#D2FF00]">{Math.round((engagedMinutes/20)*100)}%</span>
                   </div>
                   <div>
-                    <div className="text-white font-bold mb-1">15 / 20 Mins</div>
+                    <div className="text-white font-bold mb-1">{engagedMinutes} / 20 Mins</div>
                     <div className="text-xs text-white/40">Engaged with resources today</div>
                   </div>
                 </div>
@@ -83,20 +113,23 @@ export default function Resources() {
 
           {/* Categories */}
           <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-            {['All', 'Therapy', 'Focus', 'Calm', 'Education', 'Sleep'].map((cat, i) => (
-              <button key={cat} className={`px-6 py-2 rounded-full text-xs font-bold tracking-widest whitespace-nowrap transition-all ${i === 0 ? 'bg-white/10 text-white border border-white/20' : 'text-white/40 border border-white/5 hover:border-white/20'}`}>
+            {['All', 'Therapy', 'Focus', 'Calm', 'Education', 'Sleep'].map((cat) => (
+              <button 
+                key={cat} 
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-6 py-2 rounded-full text-xs font-bold tracking-widest whitespace-nowrap transition-all ${selectedCategory === cat ? 'bg-white/10 text-white border border-white/20' : 'text-white/40 border border-white/5 hover:border-white/20'}`}>
                 {cat}
               </button>
             ))}
           </div>
 
-          {/* Library Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_RESOURCES.map((res, i) => (
+            {filteredResources.map((res, i) => (
               <motion.div 
                 key={res.id}
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.05 }}
                 className="glass-panel p-6 group cursor-pointer hover:border-white/20 transition-all hover:-translate-y-1"
+                onClick={() => handleStartSession(res)}
               >
                 <div className="flex justify-between items-start mb-12">
                   <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#00DBE7]/10 transition-colors border border-white/5 group-hover:border-[#00DBE7]/30">
@@ -120,6 +153,34 @@ export default function Resources() {
 
         </div>
       </main>
+
+      {/* Active Session Overlay Modals */}
+      <AnimatePresence>
+        {activeSession && activeSession.type === 'article' && (
+          <ArticleModal 
+            key="article" 
+            session={activeSession} 
+            onClose={() => setActiveSession(null)} 
+            onComplete={handleSessionComplete} 
+          />
+        )}
+        {activeSession && activeSession.type === 'exercise' && (
+          <BreathingModal 
+            key="exercise" 
+            session={activeSession} 
+            onClose={() => setActiveSession(null)} 
+            onComplete={handleSessionComplete} 
+          />
+        )}
+        {activeSession && (activeSession.type === 'audio' || activeSession.type === 'video') && (
+          <AudioSessionModal 
+            key="audio" 
+            session={activeSession} 
+            onClose={() => setActiveSession(null)} 
+            onComplete={handleSessionComplete} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

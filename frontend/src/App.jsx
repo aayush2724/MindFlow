@@ -22,9 +22,9 @@ function ProtectedRoute({ children, onlyRole = null, allowOnboardingPending = fa
   const { user, loading, role } = useAuth();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
-  if (onlyRole === 'counselor' && role !== 'counselor') 
+  if (onlyRole === 'counselor' && role !== 'counselor')
     return <Navigate to="/dashboard" replace />;
-  if (onlyRole === 'student' && role !== 'student') 
+  if (onlyRole === 'student' && role !== 'student')
     return <Navigate to="/wellpulse" replace />;
 
   // If student is NOT onboarded, force them to onboarding
@@ -82,11 +82,11 @@ function AppRoutes() {
   return (
     <SmoothScroll>
       {/* Global Background (Video + Precise Glows) */}
-      <div 
+      <div
         className="fixed inset-0 w-full h-full pointer-events-none -z-10"
-        style={{ 
+        style={{
           background: 'radial-gradient(circle at 50% 50%, #080a0f 0%, #030305 100%)',
-          overflow: 'hidden' 
+          overflow: 'hidden'
         }}
       >
         <video
@@ -101,35 +101,35 @@ function AppRoutes() {
           }}
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"
         />
-        
+
         {/* Artistic Glow Layers */}
         <div className="absolute inset-0 overflow-hidden">
           {/* Main Cyan Core Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] rounded-full" 
-            style={{ 
-              background: 'radial-gradient(circle, rgba(0,219,231,0.5) 0%, transparent 70%)', 
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] rounded-full"
+            style={{
+              background: 'radial-gradient(circle, rgba(0,219,231,0.5) 0%, transparent 70%)',
               filter: 'blur(120px)',
               mixBlendMode: 'screen'
             }} />
-          
+
           {/* Top Left Cyan Glow */}
-          <div className="absolute top-0 left-0 w-[800px] h-[800px] rounded-full" 
-            style={{ 
-              background: 'radial-gradient(circle, rgba(0,219,231,0.15) 0%, transparent 70%)', 
+          <div className="absolute top-0 left-0 w-[800px] h-[800px] rounded-full"
+            style={{
+              background: 'radial-gradient(circle, rgba(0,219,231,0.15) 0%, transparent 70%)',
               filter: 'blur(100px)',
               mixBlendMode: 'screen'
             }} />
-          
+
           {/* Subtle Lime Peripheral Glow */}
-          <div className="absolute top-[15%] right-[10%] w-[900px] h-[900px] rounded-full" 
-            style={{ 
-              background: 'radial-gradient(circle, rgba(210,255,0,0.2) 0%, transparent 70%)', 
+          <div className="absolute top-[15%] right-[10%] w-[900px] h-[900px] rounded-full"
+            style={{
+              background: 'radial-gradient(circle, rgba(210,255,0,0.2) 0%, transparent 70%)',
               filter: 'blur(140px)'
             }} />
 
           {/* CRISP Circular Border (The Hero's Ring) */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[820px] h-[820px] rounded-full border border-white/10" 
-            style={{ 
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[820px] h-[820px] rounded-full border border-white/10"
+            style={{
               boxShadow: '0 0 100px rgba(0,219,231,0.2), inset 0 0 100px rgba(0,219,231,0.2)',
               background: 'rgba(3,3,5,0.02)'
             }} />
@@ -146,52 +146,54 @@ function AppRoutes() {
       </div>
 
       <CustomCursor />
+      {/* Global scan-line — gives the "live monitoring" feel */}
+      <div className="scan-line" />
       {showNav && <Nav />}
       <div style={{ display: 'grid' }}>
         <AnimatePresence>
           <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
-          <Route path="/auth" element={
-            user 
-              ? <Navigate to={role === 'counselor' ? '/wellpulse' : (user.onboarded ? '/dashboard' : '/onboarding')} replace /> 
-              : <PageTransition><Auth /></PageTransition>
-          } />
-          <Route path="/onboarding" element={
-            <ProtectedRoute allowOnboardingPending={true}><PageTransition><Onboarding /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute onlyRole="student"><PageTransition><Dashboard /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/checkin" element={
-            <ProtectedRoute onlyRole="student"><PageTransition><CheckIn /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/calmcal" element={
-            <ProtectedRoute onlyRole="student"><PageTransition><CalmCal /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/wellpulse" element={
-            <ProtectedRoute onlyRole="counselor"><PageTransition><WellPulse /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/resources" element={
-            <ProtectedRoute onlyRole="student"><PageTransition><Resources /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/community" element={
-            <ProtectedRoute onlyRole="student"><PageTransition><Community /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/alerts" element={
-            <ProtectedRoute onlyRole="counselor"><PageTransition><Alerts /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/departments" element={
-            <ProtectedRoute onlyRole="counselor"><PageTransition><Departments /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/account-settings" element={
-            <ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="/support" element={
-            <ProtectedRoute><PageTransition><Support /></PageTransition></ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AnimatePresence>
+            <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+            <Route path="/auth" element={
+              user
+                ? <Navigate to={role === 'counselor' ? '/wellpulse' : (user.onboarded ? '/dashboard' : '/onboarding')} replace />
+                : <PageTransition><Auth /></PageTransition>
+            } />
+            <Route path="/onboarding" element={
+              <ProtectedRoute allowOnboardingPending={true}><PageTransition><Onboarding /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute onlyRole="student"><PageTransition><Dashboard /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/checkin" element={
+              <ProtectedRoute onlyRole="student"><PageTransition><CheckIn /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/calmcal" element={
+              <ProtectedRoute onlyRole="student"><PageTransition><CalmCal /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/wellpulse" element={
+              <ProtectedRoute onlyRole="counselor"><PageTransition><WellPulse /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/resources" element={
+              <ProtectedRoute onlyRole="student"><PageTransition><Resources /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/community" element={
+              <ProtectedRoute onlyRole="student"><PageTransition><Community /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/alerts" element={
+              <ProtectedRoute onlyRole="counselor"><PageTransition><Alerts /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/departments" element={
+              <ProtectedRoute onlyRole="counselor"><PageTransition><Departments /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/account-settings" element={
+              <ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="/support" element={
+              <ProtectedRoute><PageTransition><Support /></PageTransition></ProtectedRoute>
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AnimatePresence>
       </div>
     </SmoothScroll>
   );

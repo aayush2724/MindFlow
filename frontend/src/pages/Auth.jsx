@@ -67,6 +67,27 @@ export default function Auth() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 pt-24 z-10">
+      {/* Animated floating orbs — premium depth behind the card */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        {[
+          { size: 520, x: '-8%', y: '5%', color: 'rgba(0,219,231,0.07)', dur: '13s', delay: '0s' },
+          { size: 380, x: '85%', y: '-5%', color: 'rgba(210,255,0,0.05)', dur: '16s', delay: '2.5s' },
+          { size: 460, x: '72%', y: '65%', color: 'rgba(192,132,252,0.06)', dur: '11s', delay: '1s' },
+          { size: 320, x: '18%', y: '72%', color: 'rgba(0,219,231,0.04)', dur: '19s', delay: '4.5s' },
+        ].map((orb, i) => (
+          <div key={i} className="absolute rounded-full"
+            style={{
+              width: orb.size, height: orb.size,
+              left: orb.x, top: orb.y,
+              background: orb.color,
+              filter: 'blur(100px)',
+              animation: `orbFloat ${orb.dur} ease-in-out infinite`,
+              animationDelay: orb.delay,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        ))}
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 40, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -88,7 +109,7 @@ export default function Auth() {
           </p>
         </div>
 
-        <div className="glass-panel p-8 md:p-10 relative overflow-hidden" style={{ borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="glass-panel glow-cycle p-8 md:p-10 relative overflow-hidden" style={{ borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)' }}>
           {/* subtle background glow inside card */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#00DBE7] opacity-5 blur-[100px] pointer-events-none" />
 

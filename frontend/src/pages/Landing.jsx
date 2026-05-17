@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import NeuralCanvas from '../components/NeuralCanvas';
+import TiltCard from '../components/TiltCard';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -115,7 +117,14 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center text-center px-10 overflow-hidden z-10">
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" />
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          {/* Neural particle network — reacts to mouse */}
+          <NeuralCanvas style={{ opacity: 0.38 }} />
+          {/* Aurora depth blobs */}
+          <div className="aurora-blob aurora-cyan" style={{ width: '70vw', height: '55vh', top: '5%', left: '10%' }} />
+          <div className="aurora-blob aurora-lime" style={{ width: '55vw', height: '65vh', top: '25%', right: '5%' }} />
+          <div className="aurora-blob aurora-purple" style={{ width: '50vw', height: '50vh', bottom: '8%', left: '40%' }} />
+        </div>
         <div className="relative z-10 ultra-wide space-y-10" style={{ animation: 'heroReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards', opacity: 0 }}>
           <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 'clamp(48px,7vw,80px)', lineHeight: 1.05, letterSpacing: '-0.04em', color: '#e1fdff' }}>
             PREDICT <span style={{ fontStyle: 'italic', fontWeight: 300 }}>BURNOUT.</span><br />
@@ -242,7 +251,7 @@ export default function Landing() {
               { icon: 'hub', color: '#D2FF00', title: 'Predictive Mesh', tags: ['INFRA', 'NETWORK'], desc: 'DISTRIBUTED SENSOR NETWORK, TOPOLOGICAL DATA ANALYSIS, PREDICTIVE ROUTING' },
               { icon: 'sync_alt', color: '#ebb2ff', title: 'Sync Protocol', tags: ['PROTOCOL', 'API'], desc: 'BI-DIRECTIONAL TELEMETRY, END-TO-END ENCRYPTION, LOW LATENCY WEBSOCKETS' },
             ].map((card, i) => (
-              <div key={i} className="glass-panel reveal-on-scroll rounded-2xl overflow-hidden group" style={{ transitionDelay: `${i * 100}ms` }}>
+              <TiltCard key={i} className="glass-panel reveal-on-scroll rounded-2xl overflow-hidden group" style={{ transitionDelay: `${i * 100}ms` }}>
                 <div className="relative h-64 flex items-center justify-center border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                   <span className="material-symbols-outlined transition-all duration-700 group-hover:scale-110 relative z-10"
                     style={{ fontSize: 80, color: `${card.color}99` }}>{card.icon}</span>
@@ -263,7 +272,7 @@ export default function Landing() {
                   <h3 className="text-2xl font-bold mb-4" style={{ color: card.color, fontFamily: 'Space Grotesk' }}>{card.title}</h3>
                   <p className="text-xs tracking-[0.15em] terminal-text leading-relaxed opacity-60" style={{ color: '#b9cacb' }}>{card.desc}</p>
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </div>

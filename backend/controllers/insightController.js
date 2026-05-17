@@ -22,12 +22,21 @@ const getMyInsights = async (req, res, next) => {
     // Get last 7 check-ins
     const checkinsSnapshot = await db.collection('checkins')
       .where('uid', '==', uid)
-      .orderBy('timestamp', 'desc')
-      .limit(7)
       .get();
 
-    const checkins = checkinsSnapshot.docs.map(doc => {
-      const d = doc.data();
+    const allCheckins = checkinsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Sort in memory by timestamp desc
+    allCheckins.sort((a, b) => {
+      const timeA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+      const timeB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const checkins = allCheckins.slice(0, 7).map(d => {
       return {
         mood: d.moodScore,
         stress: d.stressLevel,
@@ -39,11 +48,21 @@ const getMyInsights = async (req, res, next) => {
     // Get latest burnout score
     const scoreSnapshot = await db.collection('burnout_scores')
       .where('uid', '==', uid)
-      .orderBy('calculatedAt', 'desc')
-      .limit(1)
       .get();
 
-    const latestScore = scoreSnapshot.empty ? { score: 'N/A', riskLevel: 'unknown' } : scoreSnapshot.docs[0].data();
+    const scoreDocs = scoreSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Sort in memory by calculatedAt desc
+    scoreDocs.sort((a, b) => {
+      const timeA = a.calculatedAt ? a.calculatedAt.toDate().getTime() : 0;
+      const timeB = b.calculatedAt ? b.calculatedAt.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const latestScore = scoreDocs.length === 0 ? { score: 'N/A', riskLevel: 'unknown' } : scoreDocs[0];
 
     // 3. Generate insights via AI
     const insights = await generateAIInsights({

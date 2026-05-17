@@ -10,8 +10,6 @@ const getMyLatestScore = async (req, res, next) => {
 
     const snapshot = await db.collection('burnout_scores')
       .where('uid', '==', uid)
-      .orderBy('calculatedAt', 'desc')
-      .limit(1)
       .get();
 
     if (snapshot.empty) {
@@ -21,7 +19,19 @@ const getMyLatestScore = async (req, res, next) => {
       });
     }
 
-    const data = snapshot.docs[0].data();
+    const docs = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Sort in memory by calculatedAt desc
+    docs.sort((a, b) => {
+      const timeA = a.calculatedAt ? a.calculatedAt.toDate().getTime() : 0;
+      const timeB = b.calculatedAt ? b.calculatedAt.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const data = docs[0];
     res.status(200).json({
       hasData: true,
       ...data,
@@ -42,17 +52,27 @@ const getMyScoreHistory = async (req, res, next) => {
 
     const snapshot = await db.collection('burnout_scores')
       .where('uid', '==', uid)
-      .orderBy('calculatedAt', 'desc')
-      .limit(14)
       .get();
 
     const history = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data(),
-      calculatedAt: doc.data().calculatedAt.toDate()
-    })).reverse(); // Oldest first for the graph
+      ...doc.data()
+    }));
 
-    res.status(200).json(history);
+    // Sort in memory by calculatedAt desc (most recent first)
+    history.sort((a, b) => {
+      const timeA = a.calculatedAt ? a.calculatedAt.toDate().getTime() : 0;
+      const timeB = b.calculatedAt ? b.calculatedAt.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    // Limit to 14 and then reverse for the graph (so oldest first)
+    const limitedHistory = history.slice(0, 14).map(h => ({
+      ...h,
+      calculatedAt: h.calculatedAt.toDate()
+    })).reverse();
+
+    res.status(200).json(limitedHistory);
   } catch (error) {
     next(error);
   }

@@ -11,13 +11,23 @@ const getAllAlerts = async (req, res, next) => {
     }
     const snapshot = await db.collection('alerts')
       .where('acknowledged', '==', false)
-      .orderBy('timestamp', 'desc')
       .get();
 
-    const alerts = snapshot.docs.map(doc => {
-      const data = doc.data();
+    const rawAlerts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Sort in memory by timestamp desc
+    rawAlerts.sort((a, b) => {
+      const timeA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+      const timeB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const alerts = rawAlerts.map(data => {
       return {
-        id: doc.id,
+        id: data.id,
         // Anonymize student ID by masking it or using a hash if PII protection is strict
         // Here we provide a masked version of the UID for the counselor dashboard
         studentAlias: `Student-${data.uid.substring(0, 5)}...`, 
@@ -80,16 +90,26 @@ const getMyAlerts = async (req, res, next) => {
 
     const snapshot = await db.collection('alerts')
       .where('uid', '==', uid)
-      .orderBy('timestamp', 'desc')
       .get();
 
     const alerts = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data(),
-      timestamp: doc.data().timestamp.toDate()
+      ...doc.data()
     }));
 
-    res.status(200).json(alerts);
+    // Sort in memory by timestamp desc
+    alerts.sort((a, b) => {
+      const timeA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+      const timeB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const parsedAlerts = alerts.map(a => ({
+      ...a,
+      timestamp: a.timestamp ? a.timestamp.toDate() : new Date()
+    }));
+
+    res.status(200).json(parsedAlerts);
   } catch (error) {
     next(error);
   }

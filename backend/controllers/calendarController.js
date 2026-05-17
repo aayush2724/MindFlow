@@ -53,13 +53,19 @@ const getMyEvents = async (req, res, next) => {
 
     const snapshot = await db.collection('calendar_events')
       .where('uid', '==', uid)
-      .orderBy('startTime', 'asc')
       .get();
 
     const events = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
+    // Sort in memory by startTime asc
+    events.sort((a, b) => {
+      const timeA = a.startTime || '';
+      const timeB = b.startTime || '';
+      return timeA.localeCompare(timeB);
+    });
 
     res.status(200).json(events);
   } catch (error) {

@@ -71,17 +71,26 @@ const getMyCheckins = async (req, res, next) => {
 
     const snapshot = await db.collection('checkins')
       .where('uid', '==', uid)
-      .orderBy('timestamp', 'desc')
-      .limit(30)
       .get();
 
     const checkins = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data(),
-      timestamp: doc.data().timestamp.toDate() // Convert Firestore timestamp to JS Date
+      ...doc.data()
     }));
 
-    res.status(200).json(checkins);
+    // Sort in memory by timestamp desc
+    checkins.sort((a, b) => {
+      const timeA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+      const timeB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const limitedCheckins = checkins.slice(0, 30).map(c => ({
+      ...c,
+      timestamp: c.timestamp.toDate()
+    }));
+
+    res.status(200).json(limitedCheckins);
   } catch (error) {
     next(error);
   }
@@ -95,30 +104,34 @@ const getTodayCheckin = async (req, res, next) => {
   try {
     const { uid } = req.user;
 
+    const snapshot = await db.collection('checkins')
+      .where('uid', '==', uid)
+      .get();
+
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const snapshot = await db.collection('checkins')
-      .where('uid', '==', uid)
-      .where('timestamp', '>=', startOfDay)
-      .where('timestamp', '<=', endOfDay)
-      .limit(1)
-      .get();
+    const checkinsToday = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(doc => {
+        if (!doc.timestamp) return false;
+        const jsDate = doc.timestamp.toDate();
+        return jsDate >= startOfDay && jsDate <= endOfDay;
+      });
 
-    if (snapshot.empty) {
+    if (checkinsToday.length === 0) {
       return res.status(200).json({ checkedIn: false });
     }
 
-    const doc = snapshot.docs[0];
+    const doc = checkinsToday[0];
     res.status(200).json({
       checkedIn: true,
       data: {
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp.toDate()
+        ...doc,
+        timestamp: doc.timestamp.toDate()
       }
     });
   } catch (error) {

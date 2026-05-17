@@ -340,7 +340,7 @@ export default function Landing() {
           <div className="flex flex-col gap-6">
             <span className="font-bold tracking-tighter" style={{ fontFamily: 'Space Grotesk', fontSize: 28, color: '#e1fdff' }}>MINDFLOW</span>
             <p className="text-[11px] tracking-[0.3em] terminal-text leading-relaxed opacity-40" style={{ color: '#b9cacb' }}>
-              © 2024 MINDFLOW ECOSYSTEM.<br />ELEVATE YOUR CONSCIOUSNESS.
+              © 2026 MINDFLOW ECOSYSTEM.<br />ELEVATE YOUR CONSCIOUSNESS.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-12 gap-y-6">

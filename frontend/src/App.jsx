@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -79,6 +80,17 @@ function AppRoutes() {
   // Only Auth and Onboarding use the old global nav/bg system
   const showNav = ['/onboarding', '/checkin'].includes(location.pathname);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <SmoothScroll>
       {/* Global Background (Video + Precise Glows) */}
@@ -89,18 +101,20 @@ function AppRoutes() {
           overflow: 'hidden'
         }}
       >
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-[0.12] mix-blend-screen transition-opacity duration-1000"
-          onError={(e) => {
-            e.target.style.opacity = 0;
-            console.warn("Background video failed to load, falling back to static gradient.");
-          }}
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"
-        />
+        {!isMobile && (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-[0.12] mix-blend-screen transition-opacity duration-1000"
+            onError={(e) => {
+              e.target.style.opacity = 0;
+              console.warn("Background video failed to load, falling back to static gradient.");
+            }}
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"
+          />
+        )}
 
         {/* Artistic Glow Layers */}
         <div className="absolute inset-0 overflow-hidden">

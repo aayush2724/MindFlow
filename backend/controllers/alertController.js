@@ -40,6 +40,9 @@ const getAllAlerts = async (req, res, next) => {
 };
 
 /**
+ * @desc Acknowledge an alert (Counselor only)
+ * @route PUT /api/alerts/:alertId/acknowledge
+ */
 const acknowledgeAlert = async (req, res, next) => {
   try {
     if (req.user.role !== 'counselor') {

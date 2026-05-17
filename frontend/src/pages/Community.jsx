@@ -1,12 +1,46 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import RepliesModal from '../components/community/RepliesModal';
+import ClusterChatModal from '../components/community/ClusterChatModal';
 
 const MOCK_POSTS = [
-  { id: 1, author: 'Anonymous Node', time: '2m ago', content: 'Feeling completely overwhelmed by finals week. Anyone else having trouble sleeping because of anxiety?', tags: ['Anxiety', 'Academics'], likes: 12, replies: 4 },
-  { id: 2, author: 'Anonymous Node', time: '15m ago', content: 'Just finished the 15 min binaural beat session from the resources tab. Actually helped me focus for the first time today.', tags: ['Win', 'Focus'], likes: 34, replies: 2 },
-  { id: 3, author: 'Anonymous Node', time: '1h ago', content: 'Imposter syndrome is hitting really hard in my advanced algorithms class. I feel like everyone else understands it instantly.', tags: ['Imposter Syndrome'], likes: 56, replies: 18 },
+  { 
+    id: 1, 
+    author: 'Anonymous Node', 
+    time: '2m ago', 
+    content: 'Feeling completely overwhelmed by finals week. Anyone else having trouble sleeping because of anxiety?', 
+    tags: ['Anxiety', 'Academics'], 
+    likes: 12, 
+    replies: 2,
+    repliesList: [
+      { id: 1, author: 'Anonymous Node', content: 'Same here, sleeping has been impossible lately.', time: '1m ago' },
+      { id: 2, author: 'Anonymous Node', content: 'Try the box breathing routine in the resources tab! It actually helps slow your heart rate down.', time: 'Just now' }
+    ]
+  },
+  { 
+    id: 2, 
+    author: 'Anonymous Node', 
+    time: '15m ago', 
+    content: 'Just finished the 15 min binaural beat session from the resources tab. Actually helped me focus for the first time today.', 
+    tags: ['Win', 'Focus'], 
+    likes: 34, 
+    replies: 1,
+    repliesList: [
+      { id: 1, author: 'Anonymous Node', content: 'Awesome! Did you try Alpha state or Sleep sync?', time: '10m ago' }
+    ]
+  },
+  { 
+    id: 3, 
+    author: 'Anonymous Node', 
+    time: '1h ago', 
+    content: 'Imposter syndrome is hitting really hard in my advanced algorithms class. I feel like everyone else understands it instantly.', 
+    tags: ['Imposter Syndrome'], 
+    likes: 56, 
+    replies: 0,
+    repliesList: []
+  },
 ];
 
 const MOCK_GROUPS = [
@@ -17,6 +51,75 @@ const MOCK_GROUPS = [
 
 export default function Community() {
   const [newPost, setNewPost] = useState('');
+  const [posts, setPosts] = useState(MOCK_POSTS);
+  const [likedPosts, setLikedPosts] = useState(new Set());
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [activePostForReplies, setActivePostForReplies] = useState(null);
+  const [openChatGroup, setOpenChatGroup] = useState(null);
+
+  const handleTransmit = () => {
+    if (!newPost.trim()) return;
+    const post = {
+      id: Date.now(),
+      author: 'Anonymous Node',
+      time: 'Just now',
+      content: newPost,
+      tags: selectedCluster ? [selectedCluster.split(' ')[0]] : ['General'],
+      likes: 0,
+      replies: 0,
+      repliesList: []
+    };
+    setPosts([post, ...posts]);
+    setNewPost('');
+  };
+
+  const handleReply = (postId, content) => {
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === postId) {
+        const list = post.repliesList || [];
+        const newReply = {
+          id: Date.now(),
+          author: 'Anonymous Node',
+          content,
+          time: 'Just now'
+        };
+        const updatedList = [...list, newReply];
+        return {
+          ...post,
+          replies: updatedList.length,
+          repliesList: updatedList
+        };
+      }
+      return post;
+    }));
+  };
+
+  const toggleLike = (id) => {
+    setLikedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === id) {
+        return { ...post, likes: likedPosts.has(id) ? post.likes - 1 : post.likes + 1 };
+      }
+      return post;
+    }));
+  };
+
+  const displayedPosts = selectedCluster 
+    ? posts.filter(post => {
+        if (selectedCluster === 'First-Gen Students') return post.tags.includes('Imposter Syndrome') || post.tags.includes('First-Gen');
+        if (selectedCluster === 'Anxiety Support') return post.tags.includes('Anxiety') || post.tags.includes('General');
+        if (selectedCluster === 'CS Majors Venting') return post.tags.includes('Academics') || post.tags.includes('Imposter Syndrome') || post.tags.includes('CS');
+        return post.tags.some(tag => selectedCluster.toLowerCase().includes(tag.toLowerCase()));
+      })
+    : posts;
 
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
@@ -29,7 +132,7 @@ export default function Community() {
           <div className="flex items-end justify-between">
             <div>
               <h1 className="font-bold tracking-tight text-4xl mb-2" style={{ fontFamily:'Space Grotesk', color:'#e1fdff' }}>Neural Network</h1>
-              <p className="text-sm terminal-text opacity-50 uppercase tracking-widest">Anonymous peer telemetry & support</p>
+              <p className="text-sm terminal-text opacity-50 uppercase tracking-widest">{selectedCluster ? `CLUSTER: ${selectedCluster}` : 'Anonymous peer telemetry & support'}</p>
             </div>
           </div>
 
@@ -62,7 +165,7 @@ export default function Community() {
                         <span className="material-symbols-outlined text-[20px]">sell</span>
                       </button>
                     </div>
-                    <button className="px-6 py-2 rounded-lg text-xs font-bold tracking-widest text-black hover:scale-105 transition-transform" style={{ background: '#c084fc', boxShadow:'0 0 20px rgba(192,132,252,0.2)' }}>
+                    <button onClick={handleTransmit} className="px-6 py-2 rounded-lg text-xs font-bold tracking-widest text-black hover:scale-105 transition-transform" style={{ background: '#c084fc', boxShadow:'0 0 20px rgba(192,132,252,0.2)' }}>
                       TRANSMIT
                     </button>
                   </div>
@@ -71,7 +174,7 @@ export default function Community() {
 
               {/* Feed */}
               <div className="space-y-4">
-                {MOCK_POSTS.map((post, i) => (
+                {displayedPosts.map((post, i) => (
                   <motion.div 
                     key={post.id}
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.1 }}
@@ -100,11 +203,11 @@ export default function Community() {
                       ))}
                     </div>
                     <div className="flex items-center gap-6 pt-4 border-t border-white/5">
-                      <button className="flex items-center gap-2 text-white/30 hover:text-[#c084fc] transition-colors group/btn">
-                        <span className="material-symbols-outlined text-[18px] group-hover/btn:scale-110 transition-transform">favorite</span>
+                      <button onClick={() => toggleLike(post.id)} className={`flex items-center gap-2 transition-colors group/btn ${likedPosts.has(post.id) ? 'text-[#c084fc]' : 'text-white/30 hover:text-[#c084fc]'}`}>
+                        <span className="material-symbols-outlined text-[18px] group-hover/btn:scale-110 transition-transform" style={{ fontVariationSettings: likedPosts.has(post.id) ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
                         <span className="text-xs font-bold">{post.likes}</span>
                       </button>
-                      <button className="flex items-center gap-2 text-white/30 hover:text-white transition-colors group/btn">
+                      <button onClick={() => setActivePostForReplies(post)} className="flex items-center gap-2 text-white/30 hover:text-white transition-colors group/btn">
                         <span className="material-symbols-outlined text-[18px] group-hover/btn:scale-110 transition-transform">chat_bubble</span>
                         <span className="text-xs font-bold">{post.replies}</span>
                       </button>
@@ -128,21 +231,32 @@ export default function Community() {
                 </div>
                 <div className="space-y-4">
                   {MOCK_GROUPS.map(group => (
-                    <div key={group.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:border-white/20 transition-colors cursor-pointer">
+                    <div 
+                      key={group.id} 
+                      onClick={() => setSelectedCluster(group.name)} 
+                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer ${
+                        selectedCluster === group.name 
+                          ? 'bg-[#c084fc]/10 border-[#c084fc]/50 shadow-[0_0_15px_rgba(192,132,252,0.15)]' 
+                          : 'bg-white/5 border-white/5 hover:border-white/20'
+                      }`}
+                    >
                       <div>
-                        <div className="text-sm font-bold text-white/80 mb-1">{group.name}</div>
+                        <div className={`text-sm font-bold mb-1 transition-colors ${selectedCluster === group.name ? 'text-[#c084fc]' : 'text-white/80'}`}>{group.name}</div>
                         <div className="text-[10px] terminal-text text-white/40 flex items-center gap-1">
                           <div className={`w-1.5 h-1.5 rounded-full ${group.status === 'Very Active' ? 'bg-[#c084fc]' : 'bg-[#D2FF00]'}`} />
                           {group.active} ONLINE
                         </div>
                       </div>
-                      <button className="text-[#00DBE7] hover:bg-[#00DBE7]/10 p-1.5 rounded-md transition-colors">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setOpenChatGroup(group); }}
+                        className="text-[#00DBE7] hover:bg-[#00DBE7]/10 p-1.5 rounded-md transition-colors"
+                      >
                         <span className="material-symbols-outlined text-[16px]">login</span>
                       </button>
                     </div>
                   ))}
                 </div>
-                <button className="w-full mt-4 py-3 rounded-lg border border-dashed border-white/20 text-xs font-bold tracking-widest text-white/40 hover:text-white hover:border-white/40 transition-colors">
+                <button onClick={() => setSelectedCluster(null)} className="w-full mt-4 py-3 rounded-lg border border-dashed border-white/20 text-xs font-bold tracking-widest text-white/40 hover:text-white hover:border-white/40 transition-colors">
                   EXPLORE ALL CLUSTERS
                 </button>
               </div>
@@ -166,6 +280,27 @@ export default function Community() {
           </div>
         </div>
       </main>
+
+      <AnimatePresence>
+        {activePostForReplies && (
+          <RepliesModal
+            key="replies"
+            post={posts.find(p => p.id === activePostForReplies.id)}
+            onClose={() => setActivePostForReplies(null)}
+            onAddReply={handleReply}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {openChatGroup && (
+          <ClusterChatModal
+            key="chat"
+            group={openChatGroup}
+            onClose={() => setOpenChatGroup(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

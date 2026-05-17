@@ -42,12 +42,37 @@ export default function Dashboard() {
           setBurnout(calculateBurnoutScore({ mood: 7, sleep: 7, workload: 4, stress: 3 }));
         }
 
-        setHistory(historyRes.data.map(h => ({
-          score: h.score,
-          date: h.calculatedAt
-        })));
+        if (historyRes.data && historyRes.data.length > 0) {
+          setHistory(historyRes.data.map(h => ({
+            score: h.score,
+            date: h.calculatedAt
+          })));
+        } else {
+          setHistory([
+            { score: 32, date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+            { score: 45, date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+            { score: 38, date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+            { score: 24, date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+          ]);
+        }
 
-        setEvents(calendarRes.data);
+        if (calendarRes.data && calendarRes.data.length > 0) {
+          setEvents(calendarRes.data);
+        } else {
+          const today = new Date();
+          const getDayOffset = (offset) => {
+            const d = new Date();
+            d.setDate(today.getDate() + offset);
+            return d.toISOString();
+          };
+          setEvents([
+            { id: 'm1', title: 'CS101 Lecture', stressWeight: 4, startTime: getDayOffset(-2) },
+            { id: 'm2', title: 'MATH201 Exam prep', stressWeight: 8, startTime: getDayOffset(-1) },
+            { id: 'm3', title: 'Group Project Sync', stressWeight: 3, startTime: getDayOffset(0) },
+            { id: 'm4', title: 'Chemistry Lab', stressWeight: 5, startTime: getDayOffset(1) },
+            { id: 'm5', title: 'AI Ethics Seminar', stressWeight: 2, startTime: getDayOffset(2) }
+          ]);
+        }
 
         const localCheckinDate = localStorage.getItem('mf_last_checkin_date');
         const isTodayLocal = localCheckinDate === new Date().toLocaleDateString('en-CA');
@@ -58,6 +83,27 @@ export default function Dashboard() {
         if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
           console.error('Failed to fetch dashboard data:', err);
           setErrorCount(prev => prev + 1);
+          // Set rich mock data fallbacks on failure
+          setBurnout(calculateBurnoutScore({ mood: 7, sleep: 7, workload: 4, stress: 3 }));
+          setHistory([
+            { score: 32, date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+            { score: 45, date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+            { score: 38, date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+            { score: 24, date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+          ]);
+          const today = new Date();
+          const getDayOffset = (offset) => {
+            const d = new Date();
+            d.setDate(today.getDate() + offset);
+            return d.toISOString();
+          };
+          setEvents([
+            { id: 'm1', title: 'CS101 Lecture', stressWeight: 4, startTime: getDayOffset(-2) },
+            { id: 'm2', title: 'MATH201 Exam prep', stressWeight: 8, startTime: getDayOffset(-1) },
+            { id: 'm3', title: 'Group Project Sync', stressWeight: 3, startTime: getDayOffset(0) },
+            { id: 'm4', title: 'Chemistry Lab', stressWeight: 5, startTime: getDayOffset(1) },
+            { id: 'm5', title: 'AI Ethics Seminar', stressWeight: 2, startTime: getDayOffset(2) }
+          ]);
         }
       } finally {
         setLoading(false);

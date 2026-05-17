@@ -295,8 +295,15 @@ export default function Auth() {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Counselor credentials */}
-          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: '10px', color: '#c084fc', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Counselor Dashboard</div>
+          <div 
+            onClick={() => { setEmail('counselor@university.edu'); setPassword('mindflow2026'); setTab('signin'); }}
+            className="transition-all hover:bg-white/5 active:scale-[0.98] cursor-pointer"
+            style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}
+          >
+            <div style={{ fontSize: '10px', color: '#c084fc', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Counselor Dashboard</span>
+              <span style={{ fontSize: '9px', opacity: 0.4, fontStyle: 'italic', textTransform: 'none' }}>Click to autofill</span>
+            </div>
             <div style={{ fontSize: '13px', fontFamily: 'JetBrains Mono', color: '#e1fdff', marginBottom: '4px' }}>
               <span style={{ opacity: 0.4 }}>ID:</span> counselor@university.edu
             </div>
@@ -306,8 +313,15 @@ export default function Auth() {
           </div>
 
           {/* Student credentials */}
-          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: '10px', color: '#00DBE7', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Student Dashboard</div>
+          <div 
+            onClick={() => { setEmail('student@university.edu'); setPassword('mindflow2026'); setTab('signin'); }}
+            className="transition-all hover:bg-white/5 active:scale-[0.98] cursor-pointer"
+            style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}
+          >
+            <div style={{ fontSize: '10px', color: '#00DBE7', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Student Dashboard</span>
+              <span style={{ fontSize: '9px', opacity: 0.4, fontStyle: 'italic', textTransform: 'none' }}>Click to autofill</span>
+            </div>
             <div style={{ fontSize: '13px', fontFamily: 'JetBrains Mono', color: '#e1fdff', marginBottom: '4px' }}>
               <span style={{ opacity: 0.4 }}>ID:</span> student@university.edu
             </div>

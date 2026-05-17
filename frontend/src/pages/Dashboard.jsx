@@ -92,7 +92,10 @@ export default function Dashboard() {
   return (
     <div style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="dashboard" />
-      <Header title="SYSTEM_OS_v4.2" subtext="SYNC_PROTOCOL: ACTIVE" />
+      <Header 
+        title={`Welcome back, ${user?.displayName || 'Student'}`} 
+        subtext={user?.semester ? `${user.semester} • MindFlow Active` : "Your cognitive wellness dashboard"} 
+      />
 
       {/* Main */}
       <main className="pt-24 pb-0 px-6 md:ml-64 min-h-screen relative">

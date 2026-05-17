@@ -13,6 +13,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [signupRole, setSignupRole] = useState('student');
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -23,10 +24,10 @@ export default function Auth() {
       if (tab === 'signin') {
         await login(email, password);
       } else {
-        const res = await signup(email, password, name || 'Student');
+        const res = await signup(email, password, name || 'Student', signupRole);
         isNew = res?.isNewUser;
       }
-      navigate(isNew ? '/onboarding' : '/dashboard');
+      navigate(isNew ? '/onboarding' : (signupRole === 'counselor' ? '/wellpulse' : '/dashboard'));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -38,6 +39,7 @@ export default function Auth() {
     setLoading(true);
     setError('');
     try {
+      localStorage.setItem('mf_signup_role', tab === 'signup' ? signupRole : 'student');
       const res = await loginWithGoogle();
       navigate(res?.isNewUser ? '/onboarding' : '/dashboard');
     } catch (err) {
@@ -104,6 +106,22 @@ export default function Auth() {
           )}
 
           <form onSubmit={handleAuth} className="flex flex-col gap-5 mb-8 relative z-10">
+            {tab === 'signup' && (
+              <div className="flex bg-[#000]/40 rounded-xl p-1 border border-white/5 relative z-10 gap-2">
+                {['student', 'counselor'].map(r => (
+                  <button type="button" key={r} onClick={() => setSignupRole(r)}
+                    className="flex-1 py-2 text-[10px] font-bold tracking-widest uppercase rounded-lg transition-all"
+                    style={{ 
+                      background: signupRole === r ? 'rgba(192,132,252,0.1)' : 'transparent', 
+                      color: signupRole === r ? '#c084fc' : 'rgba(255,255,255,0.3)',
+                      border: signupRole === r ? '1px solid rgba(192,132,252,0.3)' : '1px solid transparent',
+                      boxShadow: signupRole === r ? '0 0 15px rgba(192,132,252,0.1)' : 'none'
+                    }}>
+                    {r === 'student' ? 'Student' : 'Counselor'}
+                  </button>
+                ))}
+              </div>
+            )}
             {tab === 'signup' && (
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-[20px]">person</span>

@@ -253,7 +253,7 @@ export default function CalmCal() {
   return (
     <div className="obsidian-grid" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="calmcal" />
-      <Header title="MindFlow" subtext="SYNC_PROTOCOL: ACTIVE" />
+      <Header title="CalmCal Scheduler" subtext="Time management, stress tracking, and recovery cycles" />
 
       {/* Main Canvas */}
       <main className="md:pl-64 pt-24 min-h-screen">

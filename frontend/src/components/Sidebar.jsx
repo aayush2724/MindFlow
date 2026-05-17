@@ -71,8 +71,8 @@ export default function Sidebar({ active }) {
             <span className="material-symbols-outlined text-sm">logout</span>
             <span className="terminal-text font-semibold">Sign Out</span>
           </button>
-          <Link to="#" className="text-[#b9cacb] flex items-center gap-4 py-3 hover:text-[#e1fdff] transition-colors text-xs">
-            <span className="material-symbols-outlined text-sm">help_outline</span>
+          <Link to="/support" className={`flex items-center gap-4 py-3 hover:text-[#e1fdff] transition-colors text-xs ${active === 'support' ? 'text-[#D2FF00]' : 'text-[#b9cacb]'}`}>
+            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: active === 'support' ? "'FILL' 1" : "'FILL' 0" }}>help_outline</span>
             <span className="terminal-text font-semibold">Support</span>
           </Link>
         </div>

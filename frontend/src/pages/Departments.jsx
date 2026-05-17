@@ -50,7 +50,7 @@ export default function Departments() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="departments" />
-      <Header title="MindFlow" subtext="SYS_ID: DEPT_INTEL_v1.0" searchPlaceholder="SEARCH_DEPARTMENTS..." />
+      <Header title="Institution Departments" subtext="Cross-department analytical breakdowns and wellness trends" searchPlaceholder="SEARCH_DEPARTMENTS..." />
 
       {/* Main */}
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">

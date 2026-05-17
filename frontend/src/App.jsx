@@ -14,10 +14,11 @@ import Community from './pages/Community';
 import Alerts from './pages/Alerts';
 import Departments from './pages/Departments';
 import Settings from './pages/Settings';
+import Support from './pages/Support';
 import SmoothScroll from './components/SmoothScroll';
 import CustomCursor from './components/CustomCursor';
 
-function ProtectedRoute({ children, onlyRole = null }) {
+function ProtectedRoute({ children, onlyRole = null, allowOnboardingPending = false }) {
   const { user, loading, role } = useAuth();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
@@ -25,6 +26,17 @@ function ProtectedRoute({ children, onlyRole = null }) {
     return <Navigate to="/dashboard" replace />;
   if (onlyRole === 'student' && role !== 'student') 
     return <Navigate to="/wellpulse" replace />;
+
+  // If student is NOT onboarded, force them to onboarding
+  if (role === 'student' && !user.onboarded && !allowOnboardingPending) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // If student IS onboarded, prevent them from going back to onboarding
+  if (role === 'student' && user.onboarded && allowOnboardingPending) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 }
 
@@ -141,11 +153,11 @@ function AppRoutes() {
           <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
           <Route path="/auth" element={
             user 
-              ? <Navigate to={role === 'counselor' ? '/wellpulse' : '/dashboard'} replace /> 
+              ? <Navigate to={role === 'counselor' ? '/wellpulse' : (user.onboarded ? '/dashboard' : '/onboarding')} replace /> 
               : <PageTransition><Auth /></PageTransition>
           } />
           <Route path="/onboarding" element={
-            <ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>
+            <ProtectedRoute allowOnboardingPending={true}><PageTransition><Onboarding /></PageTransition></ProtectedRoute>
           } />
           <Route path="/dashboard" element={
             <ProtectedRoute onlyRole="student"><PageTransition><Dashboard /></PageTransition></ProtectedRoute>
@@ -173,6 +185,9 @@ function AppRoutes() {
           } />
           <Route path="/account-settings" element={
             <ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/support" element={
+            <ProtectedRoute><PageTransition><Support /></PageTransition></ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -21,8 +21,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // CORS configuration
+let allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+if (allowedOrigin.endsWith('/')) {
+  allowedOrigin = allowedOrigin.slice(0, -1);
+}
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: allowedOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));

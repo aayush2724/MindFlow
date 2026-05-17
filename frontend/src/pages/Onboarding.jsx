@@ -44,7 +44,7 @@ const STEPS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [step, setStep] = useState(0);
   const [data, setData] = useState({});
 
@@ -65,11 +65,13 @@ export default function Onboarding() {
 
         await api.post('/users/onboard', payload);
         localStorage.setItem('mf_onboarding', 'true');
+        await updateUserProfile({ onboarded: true, semester: data.semester, major: data.major });
         navigate('/dashboard');
       } catch (err) {
         console.error('Onboarding failed:', err);
         // Fallback to local storage if API fails
         localStorage.setItem('mf_onboarding', 'true');
+        await updateUserProfile({ onboarded: true, semester: data.semester, major: data.major });
         navigate('/dashboard');
       }
     } else {

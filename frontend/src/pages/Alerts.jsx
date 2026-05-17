@@ -55,7 +55,7 @@ export default function Alerts() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="alerts" />
-      <Header title="MindFlow" subtext="SYS_ID: ALERTS_v4.2" searchPlaceholder="SEARCH_ALERTS..." />
+      <Header title="Cognitive Alerts" subtext="Automated stress warnings and risk-level interventions" searchPlaceholder="SEARCH_ALERTS..." />
 
       {/* Main */}
       <main className="pt-24 pb-12 px-6 md:ml-64 relative z-20">

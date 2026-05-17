@@ -124,7 +124,7 @@ export default function Community() {
   return (
     <div className="crt-overlay" style={{ background:'transparent', color:'#e5e2e3', minHeight:'100vh', fontFamily:'Inter, sans-serif' }}>
       <Sidebar active="community" />
-      <Header title="Neural Network" subtext="342 NODES ACTIVE" />
+      <Header title="Neural Network Feed" subtext="Share thoughts anonymously and connect in cluster chats" />
 
       <main className="pt-28 pb-12 px-6 md:ml-64 relative z-20">
         <div className="max-w-7xl mx-auto space-y-8">

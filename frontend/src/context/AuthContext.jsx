@@ -45,7 +45,8 @@ export function AuthProvider({ children }) {
       const saved = localStorage.getItem('mf_demo_user');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setUser(parsed);
+        const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+        setUser({ ...parsed, onboarded: parsed.role === 'counselor' ? true : hasOnboarded });
         setRole(parsed.role || 'student');
       }
       setLoading(false);
@@ -56,9 +57,23 @@ export function AuthProvider({ children }) {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
-          const { data: profile } = await api.get('/users/me');
-          setUser({ ...result.user, ...profile });
-          setRole(profile.role || 'student');
+          try {
+            const { data: profile } = await api.get('/users/me');
+            setUser({ ...result.user, ...profile, onboarded: true });
+            setRole(profile.role || 'student');
+          } catch (err) {
+            const chosenRole = localStorage.getItem('mf_signup_role') || 'student';
+            localStorage.removeItem('mf_signup_role');
+            
+            if (chosenRole === 'counselor') {
+              await api.post('/users/onboard', { role: 'counselor' });
+              setUser({ ...result.user, role: 'counselor', onboarded: true });
+              setRole('counselor');
+            } else {
+              setUser({ ...result.user, role: 'student', onboarded: false });
+              setRole('student');
+            }
+          }
         }
       } catch (err) {
         console.error('Redirect login error:', err);
@@ -71,11 +86,16 @@ export function AuthProvider({ children }) {
         try {
           // In real mode, we fetch the extended profile from our backend
           const { data: profile } = await api.get('/users/me');
-          setUser({ ...firebaseUser, ...profile });
+          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true' || !!profile.semester;
+          if (hasOnboarded) {
+            localStorage.setItem('mf_onboarding', 'true');
+          }
+          setUser({ ...firebaseUser, ...profile, onboarded: profile.role === 'counselor' ? true : hasOnboarded });
           setRole(profile.role || 'student');
         } catch (err) {
           console.error('Failed to fetch user profile from backend:', err);
-          setUser({ ...firebaseUser, role: 'student' });
+          const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+          setUser({ ...firebaseUser, role: 'student', onboarded: hasOnboarded });
           setRole('student');
         }
       } else {
@@ -88,12 +108,15 @@ export function AuthProvider({ children }) {
 
   const signInDemo = (asCounselor = false) => {
     const mockUser = asCounselor ? MOCK_COUNSELOR : MOCK_USER;
-    localStorage.setItem('mf_demo_user', JSON.stringify(mockUser));
-    setUser(mockUser);
+    const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+    const userWithOnboard = { ...mockUser, onboarded: asCounselor ? true : hasOnboarded };
+    localStorage.setItem('mf_demo_user', JSON.stringify(userWithOnboard));
+    setUser(userWithOnboard);
     setRole(mockUser.role);
   };
 
   const logout = async () => {
+    localStorage.removeItem('mf_onboarding');
     if (DEMO_MODE) {
       localStorage.removeItem('mf_demo_user');
       localStorage.removeItem('mf_last_checkin');
@@ -110,22 +133,41 @@ export function AuthProvider({ children }) {
       return;
     }
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    const { data: profile } = await api.get('/users/me');
-    setUser({ ...cred.user, ...profile });
-    setRole(profile.role || 'student');
-    return { isNewUser: false }; // Sign-in is never "new" in this context
+    try {
+      const { data: profile } = await api.get('/users/me');
+      const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true' || !!profile.semester;
+      if (hasOnboarded) {
+        localStorage.setItem('mf_onboarding', 'true');
+      }
+      setUser({ ...cred.user, ...profile, onboarded: profile.role === 'counselor' ? true : hasOnboarded });
+      setRole(profile.role || 'student');
+      return { isNewUser: !hasOnboarded };
+    } catch (err) {
+      const hasOnboarded = localStorage.getItem('mf_onboarding') === 'true';
+      setUser({ ...cred.user, role: 'student', onboarded: hasOnboarded });
+      setRole('student');
+      return { isNewUser: !hasOnboarded };
+    }
   };
 
-  const signup = async (email, password, name) => {
+  const signup = async (email, password, name, chosenRole = 'student') => {
     if (DEMO_MODE) {
-      signInDemo(email.includes('counselor'));
-      return;
+      signInDemo(chosenRole === 'counselor');
+      return { isNewUser: chosenRole === 'student' };
     }
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: name });
-    setUser({ ...newUser, role: 'student' });
-    setRole('student');
-    return { isNewUser: true };
+    
+    if (chosenRole === 'counselor') {
+      await api.post('/users/onboard', { role: 'counselor' });
+      setUser({ ...newUser, role: 'counselor', onboarded: true });
+      setRole('counselor');
+      return { isNewUser: false };
+    } else {
+      setUser({ ...newUser, role: 'student', onboarded: false });
+      setRole('student');
+      return { isNewUser: true };
+    }
   };
 
   const loginWithGoogle = async () => {
@@ -144,7 +186,27 @@ export function AuthProvider({ children }) {
       setUser(updatedUser);
       return;
     }
-    await updateProfile(auth.currentUser, updates);
+    // Update Firebase standard auth
+    const standardUpdates = {};
+    if ('displayName' in updates) standardUpdates.displayName = updates.displayName;
+    if ('photoURL' in updates) standardUpdates.photoURL = updates.photoURL;
+    
+    if (Object.keys(standardUpdates).length > 0) {
+      await updateProfile(auth.currentUser, standardUpdates);
+    }
+    
+    // Update Custom Metadata via backend PUT
+    const firestoreUpdates = { ...updates };
+    delete firestoreUpdates.photoURL;
+    
+    if (Object.keys(firestoreUpdates).length > 0) {
+      try {
+        await api.put('/users/me', firestoreUpdates);
+      } catch (err) {
+        console.warn('Failed to update Firestore profile, syncing locally:', err.message);
+      }
+    }
+    
     setUser(prev => ({ ...prev, ...updates }));
   };
 

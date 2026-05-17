@@ -18,9 +18,9 @@ const onboardUser = async (req, res, next) => {
 
     const userData = {
       uid,
-      name: name || 'Student',
+      name: name || (req.body.role === 'counselor' ? 'Counselor' : 'Student'),
       email,
-      role: 'student', // Default role for onboarding
+      role: req.body.role || 'student', // Allow custom role
       semester: semester || null,
       subjects: subjects || [],
       sleepGoal: sleepGoal || 8,

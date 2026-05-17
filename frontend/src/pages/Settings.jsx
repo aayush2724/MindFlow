@@ -12,6 +12,7 @@ export default function AccountSettings() {
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
     email: user?.email || '',
+    semester: user?.semester || '',
   });
 
   const handleImageChange = (e) => {
@@ -29,7 +30,8 @@ export default function AccountSettings() {
     try {
       await updateUserProfile({
         displayName: formData.displayName,
-        photoURL: avatar
+        photoURL: avatar,
+        semester: formData.semester
       });
       setIsEditing(false);
       alert('Profile updated successfully!');
@@ -124,6 +126,30 @@ export default function AccountSettings() {
                   />
                   <p className="text-[9px] opacity-30 italic">Email is managed by your institution and cannot be modified.</p>
                 </div>
+
+                {user?.role === 'student' && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] terminal-text font-bold text-[#b9cacb] uppercase tracking-widest">Academic Semester</label>
+                    {isEditing ? (
+                      <select 
+                        className="w-full bg-[#0e0e0f] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#e5e2e3] focus:border-[#D2FF00]/50 outline-none transition-all"
+                        value={formData.semester}
+                        onChange={(e) => setFormData({...formData, semester: e.target.value})}
+                      >
+                        <option value="" style={{ background: '#0e0e0f' }}>Select...</option>
+                        {['1st Semester', '2nd Semester', '3rd Semester', '4th Semester', '5th Semester', '6th Semester', '7th Semester', '8th Semester'].map(sem => (
+                          <option key={sem} value={sem} style={{ background: '#0e0e0f' }}>{sem}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm opacity-70 cursor-default"
+                        value={formData.semester || 'Not set'}
+                        readOnly
+                      />
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-10 border-t border-white/5 flex gap-4">
                   {isEditing ? (

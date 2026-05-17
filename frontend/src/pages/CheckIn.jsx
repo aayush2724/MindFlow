@@ -87,7 +87,7 @@ export default function CheckIn() {
   return (
     <div className="page-wrapper noise" style={{ minHeight: '100vh' }}>
       <Sidebar active="checkin" />
-      <Header title="MoodMap" subtext="TELEMETRY_LINK: READY" />
+      <Header title="Mood Check-In" subtext="Take a moment to tune in and log your current state" />
 
       <div style={{ paddingLeft: '256px', paddingTop: 120, paddingBottom: 60, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 560, padding: '0 24px', position: 'relative', zIndex: 1 }}>
